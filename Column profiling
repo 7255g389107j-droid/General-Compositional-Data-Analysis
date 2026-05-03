@@ -1,0 +1,278 @@
+# =================================================================
+# ITAGAKI-SYSTEM V2026.4.27: ULTIMATE CROSS-SECTIONAL PROFILER (Ver.2)
+# -----------------------------------------------------------------
+# Feature: Strict Zero-Exclusion & Physical Reliability Mapping
+# Logic: Zero = Absent; Reliable = Non-Zero & > 10x Noise Floor
+# Developed by: Tatsuki Itagaki
+# Copyright (c) 2026 Tatsuki Itagaki
+# License: MIT License (https://opensource.org)
+# 
+# ACADEMIC CITATION:
+# If you use this software or its logic in your research, 
+# please cite the following works:
+# Itagaki, T (2024). DOI: 10.3390/microorganisms12071484
+# Itagaki, T (2025). DOI: 10.3390/nu17233681
+# =================================================================
+
+# --- 1. DATA PREPARATION ---
+P_raw <- as.matrix(Dataset[, colSums(Dataset != 0) > 0])
+sample_ids <- rownames(P_raw)
+if(is.null(sample_ids)) sample_ids <- paste0("S_", 1:nrow(P_raw))
+n_s <- nrow(P_raw)
+
+# --- 2. ENHANCED VISUALIZATION & CALCULATION ---
+pdf_file <- "ITAGAKI_Strict_Individual_Reliability_Report.pdf"
+pdf(pdf_file, width = 14, height = 10)
+
+# To store summary data
+summary_list <- list()
+
+for(i in 1:n_s) {
+  # Layout adjustment
+  par(mar = c(12, 8, 6, 8), bg = "#FDFDFD", las = 1)
+  
+  # CRITICAL: Identify Non-Zero components for this specific individual
+  current_sample <- P_raw[i, ]
+  non_zero_mask <- current_sample > 0
+  obs_proportions <- current_sample[non_zero_mask]
+  obs_taxa_names <- names(obs_proportions)
+  
+  n_detected <- length(obs_proportions)
+  
+  if(n_detected > 0) {
+    # Calculate Individual Constants based on detected taxa ONLY
+    # Eff_Lib = 1 / Minimum observed proportion in this sample
+    eff_lib_i <- 1 / min(obs_proportions)
+    floor_i <- 1 / eff_lib_i
+    
+    # Define Reliable Taxa: Detected AND >= 10x floor
+    reliable_mask <- obs_proportions >= (floor_i * 10)
+    reliable_taxa_names <- obs_taxa_names[reliable_mask]
+    n_reliable <- length(reliable_taxa_names)
+    
+    # Sorting for plot
+    sort_idx <- order(obs_proportions, decreasing = TRUE)
+    y_sorted <- obs_proportions[sort_idx]
+    taxa_sorted <- obs_taxa_names[sort_idx]
+    
+    # --- PLOT INITIALIZATION ---
+    plot(y_sorted, type = "h", lwd = 12, lend = 1, col = "#2C3E50",
+         log = "y", yaxt = "n", xaxt = "n",
+         xlab = "", ylab = "",
+         main = paste("STRICT RELIABILITY PROFILE:", sample_ids[i]),
+         ylim = c(floor_i * 0.5, 2))
+    
+    mtext("Relative Abundance (Log Scale)", side = 2, line = 5, cex = 1.2, las = 0)
+    
+    # Draw Physics-based reference lines
+    abline(h = floor_i, col = "#E74C3C", lwd = 2, lty = 2)      # Noise Floor
+    abline(h = floor_i * 10, col = "#F1C40F", lwd = 1.5, lty = 3) # Safety Margin
+    
+    # --- STATISTICS BOX (Top Right) ---
+    rect(n_detected * 0.62, 0.2, n_detected * 1.05, 1.8, col = rgb(1,1,1,0.9), border = "#BDC3C7")
+    text(n_detected * 0.65, 1.50, paste("Detected Taxa (Non-Zero) :", n_detected), pos = 4, font = 2, cex = 1.0)
+    text(n_detected * 0.65, 1.15, paste("Reliable Taxa (>=10x)  :", n_reliable), pos = 4, font = 2, cex = 1.0, col = "#2980B9")
+    text(n_detected * 0.65, 0.85, paste("Eff. Library Size        :", sprintf("%.2e", round(eff_lib_i))), pos = 4, font = 1, cex = 0.9)
+    text(n_detected * 0.65, 0.55, paste("Poisson Noise Floor      :", sprintf("%.2e", floor_i)), pos = 4, font = 1, cex = 0.9, col = "#E74C3C")
+    text(n_detected * 0.65, 0.35, paste("Sample Index             :", i), pos = 4, font = 1, cex = 0.8, col = "gray")
+
+    # Axes
+    axis(2, at = 10^(seq(-8, 0, 1)), labels = expression(10^0, 10^-1, 10^-2, 10^-3, 10^-4, 10^-5, 10^-6, 10^-7, 10^-8), las = 1)
+    axis(1, at = 1:n_detected, labels = taxa_sorted, las = 2, cex.axis = 0.7)
+    grid(nx = NA, ny = NULL, col = "gray90")
+    
+    # Legend
+    legend("topleft", legend = c("Measured Proportion", "10x Safety Margin", "Noise Floor (1/Eff_Lib)"),
+           col = c("#2C3E50", "#F1C40F", "#E74C3C"), lty = c(1, 3, 2), lwd = c(4, 2, 2), bty = "n", cex = 0.8)
+    
+    # Store results for summary table
+    summary_list[[i]] <- data.frame(
+      Sample_ID = sample_ids[i],
+      Eff_Lib = eff_lib_i,
+      Noise_Floor = floor_i,
+      Detected_Taxa = n_detected,
+      Reliable_Taxa = n_reliable
+    )
+  }
+}
+
+dev.off()
+
+# --- 3. CONSOLIDATED SUMMARY REPORT ---
+final_report <- do.call(rbind, summary_list)
+final_report$Reliability_Score <- paste0(round(final_report$Reliable_Taxa / final_report$Detected_Taxa * 100, 1), "%")
+
+cat("\n==========================================================\n")
+cat("      FINAL SYSTEM RELIABILITY SUMMARY REPORT             \n")
+cat("==========================================================\n")
+print(final_report, row.names = FALSE)
+cat("==========================================================\n")
+cat(sprintf("PDF Report saved as: %s\n", pdf_file))
+
+# =================================================================
+# ITAGAKI-SYSTEM: CROSS-SAMPLE RELIABILITY INTEGRATOR
+# -----------------------------------------------------------------
+# Feature: Extraction of Universally Reliable Taxa (Quantitative)
+# Feature: Qualitative Presence-Absence Map (Non-Reliable)
+# Logic: Based on Individual 10x Noise Floor thresholds
+# =================================================================
+
+# --- 1. PRE-CALCULATION OF RELIABILITY MATRIX ---
+# Initialize a matrix to store the reliability status (Binary)
+# 1: Reliable (Non-zero & >= 10x Floor), 0: Detected but Unreliable, -1: Absent (Zero)
+rel_status_mat <- matrix(-1, nrow=n_s, ncol=ncol(P_raw), 
+                         dimnames=list(sample_ids, colnames(P_raw)))
+
+for(i in 1:n_s) {
+  # Get individual sample data and its specific noise floor
+  current_sample <- P_raw[i, ]
+  non_zero_mask <- current_sample > 0
+  
+  if(any(non_zero_mask)) {
+    floor_i <- min(current_sample[non_zero_mask])
+    
+    # Identify Reliable (1) vs Detected but Unreliable (0)
+    rel_status_mat[i, non_zero_mask] <- ifelse(current_sample[non_zero_mask] >= (floor_i * 10), 1, 0)
+  }
+}
+
+# --- 2. EXTRACTION: UNIVERSALLY RELIABLE TAXA (URT) ---
+# Components that are 'Reliable' in EVERY sample where they exist, 
+# and exist in ALL samples (Strict Consensus).
+urt_mask <- apply(rel_status_mat, 2, function(x) all(x == 1))
+universal_reliable_taxa <- colnames(P_raw)[urt_mask]
+
+# --- 3. EXTRACTION: QUALITATIVE MAP (PRESENCE WITHOUT CERTAINTY) ---
+# Components that are detected (> -1) but fail the 'Reliable' test in at least one sample.
+qualitative_taxa_mask <- apply(rel_status_mat, 2, function(x) any(x == 0) & all(x >= 0))
+qualitative_taxa <- colnames(P_raw)[qualitative_taxa_mask]
+
+# --- 4. OUTPUT: SYSTEMATIC CONSOLIDATED REPORT ---
+cat("\n==========================================================\n")
+cat("      UNIVERSALLY RELIABLE TAXA (Quantitative Core)       \n")
+cat("      Definition: Non-zero & >= 10x Floor in ALL samples  \n")
+cat("==========================================================\n")
+if(length(universal_reliable_taxa) > 0) {
+  print(universal_reliable_taxa)
+} else {
+  cat("None: No taxa met the strict reliability criteria across all samples.\n")
+}
+
+cat("\n==========================================================\n")
+cat("      QUALITATIVE PRESENCE LIST (Presence Only)           \n")
+cat("      Definition: Detected, but below 10x Floor threshold \n")
+cat("==========================================================\n")
+if(length(qualitative_taxa) > 0) {
+  # Create a table showing how many samples each qualitative taxon was detected in
+  qual_summary <- data.frame(
+    Taxon = qualitative_taxa,
+    Detection_Count = apply(rel_status_mat[, qualitative_taxa, drop=FALSE] >= 0, 2, sum),
+    Reliability_Rate = apply(rel_status_mat[, qualitative_taxa, drop=FALSE] == 1, 2, mean)
+  )
+  print(qual_summary, row.names = FALSE)
+} else {
+  cat("None detected.\n")
+}
+
+# =================================================================
+# ITAGAKI-SYSTEM: PHYSICAL RELIABILITY HEATMAP (ANTI-COLLISION)
+# -----------------------------------------------------------------
+# Feature: Fixed Row Order & Separated Legend Space
+# Status: 1 (Reliable: Blue), 0 (Uncertain: Yellow), -1 (Absent: Gray)
+# Developed by: Tatsuki Itagaki
+# =================================================================
+
+# --- 1. SETUP PLOT DEVICE ---
+file_name <- "Reliability_Heatmap_RowFixed.pdf"
+pdf(file_name, width = 16, height = 10)
+
+# Create a layout: Heatmap (Left, 85%) and Legend (Right, 15%)
+layout(matrix(c(1, 2), nrow = 1), widths = c(0.85, 0.15))
+
+# --- 2. DATA PREPARATION ---
+# Sort columns (taxa) by reliability, but KEEP row (sample) order
+overall_reliability <- colSums(rel_status_mat == 1)
+sorted_taxa_idx <- order(overall_reliability, decreasing = TRUE)
+plot_mat <- rel_status_mat[, sorted_taxa_idx]
+
+# IMPORTANT: Reverse the row order for image() to display top-to-bottom
+# image() plots from bottom (y=1) to top (y=n). 
+# Reversing the matrix ensures the first row of data is at the top of the plot.
+plot_mat_final <- t(apply(plot_mat, 2, rev))
+
+# --- 3. HEATMAP AREA ---
+par(mar = c(12, 10, 5, 2), bg = "#FDFDFD")
+
+# Color Palette: Absent(Gray), Uncertain(Yellow), Reliable(Blue)
+status_colors <- c("#D5D8DC", "#F1C40F", "#2980B9") 
+
+# Plot the heatmap
+image(1:ncol(plot_mat), 1:nrow(plot_mat), plot_mat_final,
+      col = status_colors,
+      xaxt = "n", yaxt = "n", xlab = "", ylab = "",
+      main = "SYSTEM RELIABILITY MAP (Fixed Row Order)")
+
+# Axis Labels
+# X-axis: Taxa names
+axis(1, at = 1:ncol(plot_mat), labels = colnames(plot_mat), las = 2, cex.axis = 0.7)
+# Y-axis: Sample IDs (reversed to match the matrix transformation)
+axis(2, at = 1:nrow(plot_mat), labels = rev(rownames(plot_mat)), las = 1, cex.axis = 0.8)
+
+# Add grid lines
+abline(v = (1:ncol(plot_mat)) + 0.5, col = "white", lwd = 0.5)
+abline(h = (1:nrow(plot_mat)) + 0.5, col = "white", lwd = 0.5)
+
+# --- 4. SEPARATED LEGEND AREA ---
+par(mar = c(0, 0, 0, 0))
+plot.new() 
+
+legend("center", 
+       legend = c("Reliable (>=10x)", "Uncertain (Presence)", "Absent (Zero)"),
+       fill = rev(status_colors), 
+       border = "black",
+       bty = "n", 
+       cex = 1.1,
+       title = "Status Status",
+       title.font = 2)
+
+# Close and Save
+dev.off()
+
+cat(sprintf("\nSUCCESS: Heatmap saved to %s\n", file_name))
+cat("Layout calibrated: Rows maintain original order from top to bottom.\n")
+
+# --- 4. EXPORT UNIVERSAL RELIABLE TAXA RAW DATA (ZERO-FREE MATRIX) ---
+
+# 1. Identify which taxa are "Reliable" in each specific sample
+# We create a logical matrix: TRUE if value >= 10x Noise Floor, FALSE otherwise
+reliability_matrix <- matrix(FALSE, nrow = nrow(P_raw), ncol = ncol(P_raw))
+colnames(reliability_matrix) <- colnames(P_raw)
+
+for(i in 1:n_s) {
+  current_sample <- P_raw[i, ]
+  obs_proportions <- current_sample[current_sample > 0]
+  
+  if(length(obs_proportions) > 0) {
+    # Physics-based threshold calculation
+    threshold_i <- min(obs_proportions) * 10
+    reliability_matrix[i, ] <- current_sample >= threshold_i
+  }
+}
+
+# 2. Universal Selection: 
+# Select only taxa that are "Reliable" (Non-Zero & >10x Floor) in ALL samples
+# colSums == n_s ensures the taxon is reliable across every single individual
+universal_reliable_mask <- colSums(reliability_matrix) == n_s
+universal_reliable_taxa_data <- P_raw[, universal_reliable_mask]
+
+# 3. Export to CSV
+write.csv(universal_reliable_taxa_data, "Universal_Reliable_Taxa_ZeroFree.csv", row.names = TRUE)
+
+# --- Summary Output ---
+cat("\n==========================================================\n")
+cat("   UNIVERSAL RELIABLE TAXA EXPORT (STRICT ZERO-FREE)      \n")
+cat("==========================================================\n")
+cat(sprintf("Original Taxa Count     : %d\n", ncol(P_raw)))
+cat(sprintf("Universal Reliable Taxa : %d\n", ncol(universal_reliable_taxa_data)))
+cat(sprintf("CSV File saved as       : %s\n", "Universal_Reliable_Taxa_ZeroFree.csv"))
+cat("==========================================================\n")
