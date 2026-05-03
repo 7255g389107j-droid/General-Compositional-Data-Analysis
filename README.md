@@ -49,3 +49,4 @@ This project is licensed under the MIT License - see the [LICENSE](https://opens
 ---
 **Developed by:** Tatsuki Itagaki (2026)  
 *Reliability is the shortest path to truth.*
+*For information on how to identify invariant components, please refer to another repository.*
