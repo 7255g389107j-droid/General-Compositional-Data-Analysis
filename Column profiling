@@ -276,3 +276,86 @@ cat(sprintf("Original Taxa Count     : %d\n", ncol(P_raw)))
 cat(sprintf("Universal Reliable Taxa : %d\n", ncol(universal_reliable_taxa_data)))
 cat(sprintf("CSV File saved as       : %s\n", "Universal_Reliable_Taxa_ZeroFree.csv"))
 cat("==========================================================\n")
+
+# ---
+# --- 1. DATA PREPARATION & PHYSICAL FILTERING ---
+  P_raw <- as.matrix(Dataset[, colSums(Dataset != 0) > 0])
+  n_s <- nrow(P_raw)
+  n_t <- ncol(P_raw)
+  
+  # --- STEP 1: INDIVIDUAL NOISE FLOOR MATRIX ---
+  sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
+  
+  # --- STEP 2: ALL-SAMPLE INDIVIDUAL VALIDATION ---
+  is_reliable_mat <- matrix(FALSE, nrow = n_s, ncol = n_t)
+  
+  for(i in 1:n_s) {
+    threshold_i <- sample_minima[i] * 10
+    is_reliable_mat[i, ] <- P_raw[i, ] >= threshold_i
+  }
+  
+  # STRICT FILTERING: Keep only taxa that are >= 10x floor in EVERY sample
+  # This ensures that Sp and IR are calculated only for 'Reliable' components.
+  valid_taxa_mask <- apply(is_reliable_mat, 2, all)
+  
+  if(sum(valid_taxa_mask) < 2) {
+    stop("CRITICAL ERROR: No taxa passed the ULTRA-STRICT Policy A filter.")
+  }
+
+max_floor <- max(sample_minima) 
+max_threshold <- max_floor * 10
+
+cat("System Noise Floor (Max floor) :", sprintf("%.2e", max_floor), "\n")
+cat("Reliability Threshold (Max 10x):", sprintf("%.2e", max_threshold), "\n")
+
+P_reliable <- P_raw[, valid_taxa_mask, drop = FALSE]
+
+if(ncol(P_reliable) < 1) {
+  stop("CRITICAL ERROR: No taxa passed the 10x floor filtering.")
+}
+
+cat("Filtered Components         :", ncol(P_reliable), "/", ncol(P_raw), "\n")
+
+# --- 2. CORE STABILITY CALCULATION (IR & Sp) ---
+# Dynamic Effective Library Size for the reliable subset
+eff_lib <- 1 / mean(apply(P_reliable, 2, min))
+
+# Log-transform reliable data
+L <- log(P_reliable)
+
+# Observed Variance (V_obs)
+obs_v <- apply(L, 2, var)
+
+# Theoretical Variance (V_theo) based on Poisson sampling theory
+# theo_v = 1 / (Mean Proportion * Effective Library Size)
+theo_v <- 1 / (colMeans(P_reliable) * eff_lib)
+
+# IR (Invariance Ratio): Deviation magnitude from physical noise
+ir_values <- obs_v / theo_v
+
+# Sp (Physical Deviation Score): Log-scaled turbulence metric
+sp_values <- log10(ir_values + 1)
+
+# --- 3. FINAL COMPONENT STABILITY REPORT ---
+stability_report <- data.frame(
+  Taxon_ID = colnames(P_reliable),
+  Mean_Abundance = colMeans(P_reliable),
+  Invariance_Ratio = round(ir_values, 4),
+  Physical_Deviation_Sp = round(sp_values, 6)
+)
+
+# Sorting by Sp (Descending) to identify system-wide turbulance drivers
+stability_report <- stability_report[order(-stability_report$Physical_Deviation_Sp), ]
+
+# --- 4. OUTPUT SUMMARY ---
+cat("\n==========================================================\n")
+cat("      ITAGAKI PHYSICAL STABILITY REPORT (FILTERED)        \n")
+cat("==========================================================\n")
+print(head(stability_report, n_t), row.names = FALSE)
+cat("----------------------------------------------------------\n")
+cat("DEFINITION:\n")
+cat("  - Invariance_Ratio (IR): Ratio of observed vs theoretical noise.\n")
+cat("  - Invariance_Ratio (IR) = zero is suspected noise data.\n")
+cat("  - Physical_Deviation (Sp): Stability score (Lower is more Stable).\n")
+cat("  - Physical_Deviation (Sp) = zero is suspected noise data.\n")
+cat("==========================================================\n")
