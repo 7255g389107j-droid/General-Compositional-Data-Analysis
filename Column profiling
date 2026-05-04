@@ -2,7 +2,7 @@
 # ITAGAKI-SYSTEM V2026.4.27: ULTIMATE CROSS-SECTIONAL PROFILER (Ver.2)
 # -----------------------------------------------------------------
 # Feature: Strict Zero-Exclusion & Physical Reliability Mapping
-# Logic: Zero = Absent; Reliable = Non-Zero & > 10x Noise Floor
+# Logic: Zero = Undetected; Reliable = Non-Zero & > 10x Noise Floor
 # Developed by: Tatsuki Itagaki
 # Copyright (c) 2026 Tatsuki Itagaki
 # License: MIT License (https://opensource.org)
@@ -119,7 +119,7 @@ cat(sprintf("PDF Report saved as: %s\n", pdf_file))
 
 # --- 1. PRE-CALCULATION OF RELIABILITY MATRIX ---
 # Initialize a matrix to store the reliability status (Binary)
-# 1: Reliable (Non-zero & >= 10x Floor), 0: Detected but Unreliable, -1: Absent (Zero)
+# 1: Reliable (Non-zero & >= 10x Floor), 0: Detected but Unreliable, -1: Undetected (Zero)
 rel_status_mat <- matrix(-1, nrow=n_s, ncol=ncol(P_raw), 
                          dimnames=list(sample_ids, colnames(P_raw)))
 
@@ -178,7 +178,7 @@ if(length(qualitative_taxa) > 0) {
 # ITAGAKI-SYSTEM: PHYSICAL RELIABILITY HEATMAP (ANTI-COLLISION)
 # -----------------------------------------------------------------
 # Feature: Fixed Row Order & Separated Legend Space
-# Status: 1 (Reliable: Blue), 0 (Uncertain: Yellow), -1 (Absent: Gray)
+# Status: 1 (Reliable: Blue), 0 (Uncertain: Yellow), -1 (Undetected: Gray)
 # Developed by: Tatsuki Itagaki
 # =================================================================
 
@@ -203,7 +203,7 @@ plot_mat_final <- t(apply(plot_mat, 2, rev))
 # --- 3. HEATMAP AREA ---
 par(mar = c(12, 10, 5, 2), bg = "#FDFDFD")
 
-# Color Palette: Absent(Gray), Uncertain(Yellow), Reliable(Blue)
+# Color Palette: Undetected(Gray), Uncertain(Yellow), Reliable(Blue)
 status_colors <- c("#D5D8DC", "#F1C40F", "#2980B9") 
 
 # Plot the heatmap
@@ -227,7 +227,7 @@ par(mar = c(0, 0, 0, 0))
 plot.new() 
 
 legend("center", 
-       legend = c("Reliable (>=10x)", "Uncertain (Presence)", "Absent (Zero)"),
+       legend = c("Reliable (>=10x)", "Uncertain (Presence)", "Undetected (Zero)"),
        fill = rev(status_colors), 
        border = "black",
        bty = "n", 
