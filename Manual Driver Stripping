@@ -1,0 +1,97 @@
+# ITAGAKI-SYSTEM V18.1 Extended: Manual Driver Stripping Logic
+# After stripping, ≥ 5 components are necessary.
+# Logic: Provides an option to specify exact columns to drop instead of top IR.
+
+# Developed by: Tatsuki Itagaki (2026)
+# Copyright (c) 2026 Tatsuki Itagaki
+# License: MIT License (https://opensource.org)
+# 
+# ACADEMIC CITATION:
+# If you use this software or its logic in your research, 
+# please cite the following works:
+# Pearson, K. (1897). DOI: 10.1098/rspl.1896.0076
+# Ohta, T. (2011).    DOI: 10.1007/s11004-011-9332-y
+# Itagaki, T (2024).  DOI: 10.3390/microorganisms12071484
+# Itagaki, T (2025).  DOI: 10.3390/nu17233681
+# Itagaki, T (2026).  DOI: 10.13140/RG.2.2.35655.05287
+
+
+  analyze_physical_coherence_v18_manual <- function(Dataset, 
+                                                    drop_ratio, 
+                                                    manual_drop_names = NULL) {
+  # --- 1. INITIALIZATION ---
+  P_raw <- as.matrix(Dataset)
+  n_s <- nrow(P_raw)
+  n_t <- ncol(P_raw)
+  
+  sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
+  is_reliable_mat <- matrix(FALSE, nrow = n_s, ncol = n_t)
+  
+  for(i in 1:n_s) {
+    threshold_i <- sample_minima[i] * 10
+    is_reliable_mat[i, ] <- P_raw[i, ] >= threshold_i
+  }
+
+  valid_mask <- apply(is_reliable_mat, 2, all)
+  if(sum(valid_mask) < 5) stop("CRITICAL ERROR: Insufficient components.")
+  
+  P_clean <- P_raw[, valid_mask, drop = FALSE]
+  eff_lib <- 1 / mean(apply(P_clean, 2, min))
+  
+  calc_ir <- function(dat, lib) {
+    L <- log(dat)
+    obs_v <- apply(L, 2, var)
+    theo_v <- 1 / (colMeans(dat) * lib)
+    return(obs_v / theo_v)
+  }
+  
+  ir_full <- calc_ir(P_clean, eff_lib)
+  comp_names <- names(ir_full)
+  
+  # --- 2. LOGIC: STRIPPING PHASE (MANUAL vs AUTOMATIC) ---
+  if (!is.null(manual_drop_names)) {
+    # Check if specified names exist in the cleaned dataset
+    dropped_names <- intersect(manual_drop_names, comp_names)
+    if (length(dropped_names) == 0) stop("ERROR: None of the specified names found in the dataset.")
+    
+    drop_indices <- which(comp_names %in% dropped_names)
+    strip_mode <- "MANUAL (User Specified)"
+  } else {
+    # Default: Original Top IR stripping logic
+    n_drop <- max(1, floor(length(ir_full) * drop_ratio))
+    drop_indices <- order(ir_full, decreasing = TRUE)[1:n_drop]
+    dropped_names <- comp_names[drop_indices]
+    strip_mode <- paste0("AUTO (Top ", drop_ratio * 100, "% IR)")
+　　if(ncol(P_reduced) < 5) {
+  　stop(sprintf("CRITICAL ERROR: Only %d components remain. Stripping aborted.", ncol(P_reduced)))
+　}
+  }
+  
+  # --- 3. RE-CALCULATION & COHERENCE ---
+  P_reduced <- P_clean[, -drop_indices, drop = FALSE]
+  P_reduced <- sweep(P_reduced, 1, rowSums(P_reduced), "/") # Closing
+  
+  ir_red <- calc_ir(P_reduced, eff_lib)
+  remaining_names <- names(ir_red)
+  rho_val <- cor(ir_full[remaining_names], ir_red, method = "pearson")
+  
+  # --- 4. OUTPUT REPORT ---
+  cat("\n==========================================================\n")
+  cat("      ITAGAKI-SYSTEM V18.1: MANUAL STRIPPING REPORT       \n")
+  cat("==========================================================\n")
+  cat(sprintf("Stripping Mode           : %s\n", strip_mode))
+  cat(sprintf("Dropped Components       : %s\n", paste(dropped_names, collapse=", ")))
+  cat(sprintf("Physical Rho (IR-based)  : %.6f\n", rho_val))
+  cat("----------------------------------------------------------\n")
+
+  return(list(Rho = rho_val, dropped = dropped_names, cleansed_data = P_reduced))
+}
+
+# --- HOW TO USE ---
+# After stripping, ≥ 5 components are necessary.
+
+# Example 1: Drop specific taxa by name
+# result <- analyze_physical_coherence_v18_manual(Dataset, manual_drop_names = c("Taxon_A", "Taxon_B"))
+
+# Example 2: Use original auto-drop (just leave manual_drop_names as NULL)
+# result <- analyze_physical_coherence_v18_manual(Dataset, drop_ratio = 0.15)
