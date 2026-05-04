@@ -359,3 +359,7 @@ cat("  - Invariance_Ratio (IR) = zero is suspected noise data.\n")
 cat("  - Physical_Deviation (Sp): Stability score (Lower is more Stable).\n")
 cat("  - Physical_Deviation (Sp) = zero is suspected noise data.\n")
 cat("==========================================================\n")
+
+# Optional: Visualization of Physical Deviation
+# plot(stability_report$Mean_Abundance, stability_report$Physical_Deviation_Sp, log="x")
+# write.csv(stability_report, "Itagaki_Physical_Stability_Data.csv", row.names = FALSE)
