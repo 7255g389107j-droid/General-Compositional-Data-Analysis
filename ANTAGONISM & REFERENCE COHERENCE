@@ -1,0 +1,102 @@
+# =================================================================
+# ITAGAKI-CHAOS-ENGINE: ANTAGONISM & REFERENCE COHERENCE (V9.0)
+# -----------------------------------------------------------------
+# Feature: Comprehensive Evaluation of Component-wise Contention
+# Logic: All-to-all pair comparison (Ohta's Asymmetry Matrix)
+# After stripping, ≥ 5 components are necessary.
+# The ratio is the last step to the goal.
+# Take the ratio using the Invariant Anchor as the basis. 
+# The UTR absolute variation will be reconstructed as a ratio of basis data using the Invariant Anchor.
+# Developed by: Tatsuki Itagaki
+# Copyright (c) 2026 Tatsuki Itagaki
+# License: MIT License (https://opensource.org)
+# 
+# ACADEMIC CITATION:
+# If you use this software or its logic in your research, 
+# please cite the following works:
+# Pearson, K. (1897). DOI: 10.1098/rspl.1896.0076
+# Ohta, T. (2011).    DOI: 10.1007/s11004-011-9332-y
+# Itagaki, T (2024).  DOI: 10.3390/microorganisms12071484
+# Itagaki, T (2025).  DOI: 10.3390/nu17233681
+# Itagaki, T (2026).  DOI: 10.13140/RG.2.2.35655.05287
+# =================================================================
+
+# --- [CORE ENGINE] ---
+evaluate_antagonistic_chaos <- function(Dataset) {
+  
+  # 1. PREPARATION & FILTERING
+  d_m <- as.matrix(Dataset)
+  valid_mask <- apply(d_m, 2, function(x) all(x > 0))
+  d_clean <- d_m[, valid_mask, drop = FALSE]
+  n_taxa <- ncol(d_clean)
+  
+  if(n_taxa < 2) stop("Insufficient components for antagonism analysis.")
+
+  # 2. ALL-TO-ALL PAIRWISE CALCULATION (Win-Count Matrix)
+  # Calculating the directional stability for every possible pair
+  win_counts <- numeric(n_taxa)
+  names(win_counts) <- colnames(d_clean)
+  
+  for (j in 1:n_taxa) {
+    # Matrix of ratios relative to component 'j'
+    r_ratio <- d_clean / d_clean[, j]
+    
+    # Pairwise competition: Is 'j' a better denominator than the others?
+    # This evaluates the SD/Mean (CV) asymmetry for all combinations
+    win_counts[j] <- sum(apply(r_ratio, 2, function(x) sd(x)/mean(x)) < 
+                         apply(1/r_ratio, 2, function(x) sd(x)/mean(x)), na.rm=TRUE)
+  }
+
+  # 3. ANTAGONISM METRICS (V9.0 SPECIFIC)
+  # [A] S_ant: Shannon Entropy of the Win-Count distribution
+  p_wins <- (win_counts + 1) / sum(win_counts + 1)
+  S_ant <- -sum(p_wins * log(p_wins)) / log(n_taxa)
+  
+  # [B] G_top: The Gap between the 1st and 2nd rank winners
+  sorted_wins <- sort(win_counts, decreasing = TRUE)
+  G_top <- (sorted_wins[1] - sorted_wins[2]) / (n_taxa - 1)
+  
+  # [C] AI: Combined Antagonistic Index
+  antagonistic_index <- (S_ant + (1 - G_top)) / 2
+
+status <- ifelse(antagonistic_index > 0.8, "CRITICAL ANTAGONISM",
+            ifelse(antagonistic_index > 0.5, "COMPETITIVE", "STABLE HIERARCHY"))
+
+  # --- 4. OUTPUT KEY DIFFERENCES ---
+  cat("\n==========================================================\n")
+  cat("      KEY DIFFERENCES IN V9.0 (ANTAGONISM FOCUS)          \n")
+  cat("==========================================================\n")
+  cat(sprintf("1. ALL-TO-ALL PAIRS    : Total %d combinations evaluated.\n", n_taxa^2))
+  cat("ALL-TO-ALL PAIRS  Total are necessary more than 25 combinations.\n")
+  cat(sprintf("2. ANTAGONISTIC ENTROPY: S_ant = %.6f\n", S_ant))
+  cat("   (Measures if wins are distributed evenly vs. concentrated)\n\n")
+  cat(sprintf("3. TOP-TIER GAP        : G_top = %.6f\n", G_top))
+  cat("   (Evaluates the margin between the two strongest anchors)\n\n")
+  cat(sprintf("4. ANTAGONISM INDEX    : AI = %.6f\n", antagonistic_index))
+  cat("   (High AI indicates a system with no dominant reference)\n")
+  cat("==========================================================\n")
+  cat("----------------------------------------------------------\n")
+  cat(sprintf("SYSTEM STATUS: %s\n", status))
+  cat("==========================================================\n")
+
+
+
+# Visualize the Win-Count Distribution
+  barplot(sort(win_counts, decreasing = TRUE), 
+          main="Win-Count Distribution (Ranked Hierarchy)",
+          col=colorRampPalette(c("#2980B9", "#D5D8DC"))(n_taxa),
+          ylab="Win Counts", las=2, cex.names=0.7)
+
+  return(list(
+    Antagonism_Index = antagonistic_index,
+    Entropy = S_ant,
+    Top_Gap = G_top,
+    Win_Counts = win_counts
+  ))
+
+return(list(AI = antagonistic_index, Win_Counts = win_counts))
+
+
+}
+
+ result <- evaluate_antagonistic_chaos(universal_reliable_taxa_data)
