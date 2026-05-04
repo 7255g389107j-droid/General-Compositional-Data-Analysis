@@ -19,9 +19,11 @@ Traditional microbiome analysis often fails to distinguish between biological si
 
 If you use this software or its logic in your research, please cite the following works:
 
-1. **Itagaki, T. (2024).** *In-depth analysis of microbial dynamics.* [DOI: 10.3390/microorganisms12071484](https://doi.org)
-2. **Itagaki, T. (2025).** *Nutritional impacts on compositional stability.* [DOI: 10.3390/nu17233681](https://doi.org)
-
+1. **Pearson, K. (1897).**  [10.1098/rspl.1896.0076](https://doi.org)
+2. **Ohta, T.    (2011).**  [10.1007/s11004-011-9332-y](https://doi.org)
+3. **Itagaki, T. (2024).**  [DOI: 10.3390/microorganisms12071484](https://doi.org)
+4. **Itagaki, T. (2025).**  [DOI: 10.3390/nu17233681](https://doi.org)
+5. **Itagaki, T. (2026).**  [DOI: 10.13140/RG.2.2.35655.05287](https://doi.org)
 ## 🚀 Getting Started
 
 ### Prerequisites
