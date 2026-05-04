@@ -32,7 +32,7 @@ If you use this software or its logic in your research, please cite the followin
 The system evaluates each taxon based on the following physical criteria:
 - **Reliable:** Non-zero and $\ge 10 \times$ Noise Floor.
 - **Uncertain (Presence):** Detected, but $< 10 \times$ Noise Floor.
-- **Absent:** Absolute zero.
+- **Undetected:** Absolute zero.
 
 ## 📊 Outputs
 
