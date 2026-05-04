@@ -1,0 +1,91 @@
+# =================================================================
+# ITAGAKI-SYSTEM V2026.5.5: INVARIANT ANCHOR JUDICIAL ENGINE
+# Logic: Automated Anchor Identification & Physical Coherence Check
+# Developed by: Tatsuki Itagaki
+# Copyright (c) 2026 Tatsuki Itagaki
+# License: MIT License (https://opensource.org)
+# 
+# ACADEMIC CITATION:
+# If you use this software or its logic in your research, 
+# please cite the following works:
+# Pearson, K. (1897). DOI: 10.1098/rspl.1896.0076
+# Ohta, T. (2011).    DOI: 10.1007/s11004-011-9332-y
+# Itagaki, T (2024).  DOI: 10.3390/microorganisms12071484
+# Itagaki, T (2025).  DOI: 10.3390/nu17233681
+# Itagaki, T (2026).  DOI: 10.13140/RG.2.2.35655.05287
+# =================================================================
+
+identify_invariant_anchor_v2026 <- function(Dataset) {
+  
+  # --- 1. PHYSICAL FILTERING (UTR DEFINITION) ---
+  # Based on 10x Poisson Noise Floor Policy
+  P_raw <- as.matrix(Dataset)
+  n_s <- nrow(P_raw)
+  sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
+  
+  is_reliable_mat <- matrix(FALSE, nrow = n_s, ncol = ncol(P_raw))
+  for(i in 1:n_s) {
+    is_reliable_mat[i, ] <- P_raw[i, ] >= (sample_minima[i] * 10)
+  }
+  
+  # Identify UTR (Universally Reliable Taxa)
+  valid_taxa <- colnames(P_raw)[apply(is_reliable_mat, 2, all)]
+  
+  # --- 2. CRITICAL DIMENSION CHECK ---
+  # Physical judgement requires at least 5 stable dimensions
+  n_valid <- length(valid_taxa)
+  if(n_valid < 5) {
+    cat(sprintf("Current Reliable Dimensions: %d\n", n_valid))
+    stop("CRITICAL ERROR: Insufficient dimensions for physical judgement (< 5 UTR).")
+  }
+  
+  P_clean <- P_raw[, valid_taxa]
+  eff_lib <- 1 / mean(apply(P_clean, 2, min))
+
+  # --- 3. INVARIANCE SEARCH (PEARSON-OHTA LOGIC) ---
+  # Calculating Invariance Ratio (IR) for all candidates
+  calc_ir <- function(dat, lib) {
+    L <- log(dat)
+    obs_v <- apply(L, 2, var)
+    theo_v <- 1 / (colMeans(dat) * lib)
+    return(obs_v / theo_v)
+  }
+  
+  ir_scores <- calc_ir(P_clean, eff_lib)
+  
+  # Identification of the Invariant Anchor candidate (Minimum IR)
+  anchor_index <- which.min(ir_scores)
+  anchor_name <- names(ir_scores)[anchor_index]
+  anchor_val <- ir_scores[anchor_index]
+
+  # --- 4. STRIPPING VALIDATION (FINAL JUDGEMENT) ---
+  # Drop the component with maximum noise (Top IR) to test structural stability
+  drop_idx <- which.max(ir_scores)
+  P_reduced <- P_clean[, -drop_idx]
+  P_reduced <- sweep(P_reduced, 1, rowSums(P_reduced), "/") # Closure
+  
+  ir_reduced <- calc_ir(P_reduced, eff_lib)
+  common_names <- intersect(names(ir_scores), names(ir_reduced))
+  
+  # The Physical Rho (Pearson's r) must be high for a true Anchor to exist
+  rho_val <- cor(ir_scores[common_names], ir_reduced[common_names], method = "pearson")
+
+  # --- 5. OUTPUT FINAL REPORT ---
+  cat("\n==========================================================\n")
+  cat("      ITAGAKI-SYSTEM V2026.5.5: FINAL ANCHOR REPORT       \n")
+  cat("==========================================================\n")
+  cat(sprintf("Reliable UTR Count       : %d\n", n_valid))
+  cat(sprintf("Detected Invariant Anchor: [%s]\n", anchor_name))
+  cat(sprintf("Anchor Invariance Ratio  : %.6f\n", anchor_val))
+  cat(sprintf("Physical Pearson's r     : %.6f\n", rho_val))
+  
+  # Status Judgement
+  status <- ifelse(rho_val > 0.9, "STABLE ANCHOR FOUND", "UNSTABLE / CAOTIC")
+  cat(sprintf("System Status            : %s\n", status))
+  cat("==========================================================\n")
+
+  return(list(anchor = anchor_name, rho = rho_val, utr_list = valid_taxa))
+}
+
+# --- EXECUTION ---
+  result <- identify_invariant_anchor_v2026(Dataset)
