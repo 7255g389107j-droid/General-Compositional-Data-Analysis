@@ -68,23 +68,29 @@ reconstruct_absolute_variation <- function(Dataset, anchor_name) {
 
   # --- 4. VISUALIZATION OF NATURAL VARIATION ---
   # Plotting Observed vs Reconstructed Absolute Variation
-  library(ggplot2)
-  plot_data <- data.frame(
-    Component = rep(reconstruction_results$Component, 2),
-    Variation = c(reconstruction_results$Observed_Vx, reconstruction_results$Absolute_Vw),
-    Type = rep(c("Compositional (Observed)", "Absolute (Reconstructed)"), each = nrow(reconstruction_results))
-  )
+  res_sorted <- reconstruction_results[order(reconstruction_results$Absolute_Vw, decreasing = TRUE), ]
+  
+  old_par <- par(mar = c(8, 4, 4, 2))
 
-  p <- ggplot(plot_data, aes(x = reorder(Component, -Variation), y = Variation, fill = Type)) +
-    geom_bar(stat = "identity", position = "dodge") +
-    theme_minimal() +
-    labs(title = "Natural Absolute Variation Reconstruction",
-         subtitle = paste("Base Anchor:", anchor_name, "| System Vt:", round(Vt, 4)),
-         x = "UTR Components", y = "Coefficient of Variation (CV)") +
-    scale_fill_manual(values = c("#2980B9", "#BDC3C7")) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-  print(p)
+  plot_mat <- t(as.matrix(res_sorted[, c("Absolute_Vw", "Observed_Vx")]))
+  
+  bp <- barplot(plot_mat, 
+                beside = TRUE, 
+                col = c("#2980B9", "#BDC3C7"),
+                border = NA,
+                main = "Natural Absolute Variation Reconstruction",
+                ylab = "Coefficient of Variation (CV)",
+                las = 2,
+                names.arg = res_sorted$Component,
+                cex.names = 0.8)
+  
+  mtext(paste("Base Anchor:", anchor_name, "| System Vt:", round(Vt, 4)), side = 3, line = 0.5)
+  legend("topright", 
+         legend = c("Absolute (Reconstructed)", "Compositional (Observed)"), 
+         fill = c("#2980B9", "#BDC3C7"), 
+         bty = "n", cex = 0.8)
+  
+  par(old_par)
   
   return(reconstruction_results)
 }
