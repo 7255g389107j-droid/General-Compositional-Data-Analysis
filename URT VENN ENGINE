@@ -2,6 +2,8 @@
 # ITAGAKI-SYSTEM: MULTI-WAY URT VENN ENGINE (BASE R ONLY)
 # Logic: Absolute Physical Presence Mapping (No External Packages)
 # Supported: 2, 3, or 4 Groups (Manual Setup)
+# Copyright (c) 2026 Tatsuki Itagaki
+# License: MIT License (https://opensource.org)
 # =================================================================
 
 plot_urt_venn_manual <- function(group_list, names = NULL) {
