@@ -1,0 +1,77 @@
+# =================================================================
+# ITAGAKI-SYSTEM: MULTI-WAY URT VENN ENGINE (BASE R ONLY)
+# Logic: Absolute Physical Presence Mapping (No External Packages)
+# Supported: 2, 3, or 4 Groups (Manual Setup)
+# =================================================================
+
+plot_urt_venn_manual <- function(group_list, names = NULL) {
+  n_groups <- length(group_list)
+  if(is.null(names)) names <- paste("Group", 1:n_groups)
+  
+  # --- 1. SETUP CANVAS ---
+  plot.new()
+  plot.window(xlim=c(-15, 15), ylim=c(-15, 15), asp=1)
+  title(main=paste("Universally Reliable Taxa (URT) -", n_groups, "Groups"))
+  
+  cols <- c(rgb(0.16, 0.5, 0.72, 0.4), # Blue
+            rgb(0.95, 0.77, 0.06, 0.4), # Yellow
+            rgb(0.91, 0.3, 0.24, 0.4), # Red
+            rgb(0.18, 0.8, 0.44, 0.4)) # Green
+
+  draw_circle <- function(x, y, r, col) {
+    theta <- seq(0, 2*pi, length=200)
+    polygon(x + r*cos(theta), y + r*sin(theta), col=col, border="white", lwd=2)
+  }
+
+  draw_ellipse <- function(x, y, a, b, angle, col) {
+    theta <- seq(0, 2*pi, length=200)
+    curr_x <- x + a*cos(theta)*cos(angle) - b*sin(theta)*sin(angle)
+    curr_y <- y + a*cos(theta)*sin(angle) + b*sin(theta)*cos(angle)
+    polygon(curr_x, curr_y, col=col, border="white", lwd=2)
+  }
+
+  # --- 2. LOGIC BY GROUP COUNT ---
+  if(n_groups == 2) {
+    draw_circle(-3, 0, 7, cols[1]); draw_circle(3, 0, 7, cols[2])
+    text(c(-6, 6), c(0, 0), names, font=2, cex=1.2)
+    # Area counts (Mental check for Reality)
+    c1 <- length(setdiff(group_list[[1]], group_list[[2]]))
+    c2 <- length(setdiff(group_list[[2]], group_list[[1]]))
+    int <- length(intersect(group_list[[1]], group_list[[2]]))
+    text(c(-4, 4, 0), c(0, 0, 0), c(c1, c2, int), cex=1.5)
+
+  } else if(n_groups == 3) {
+    draw_circle(-3, 2, 7, cols[1]); draw_circle(3, 2, 7, cols[2]); draw_circle(0, -3, 7, cols[3])
+    text(c(-6, 6, 0), c(5, 5, -8), names, font=2, cex=1.2)
+    # Core logic: Intersect of all 3
+    core <- length(Reduce(intersect, group_list))
+    text(0, 0, core, cex=1.5, font=2)
+
+  } else if(n_groups == 4) {
+    # 4-way requires ellipses for all 15 intersections
+    draw_ellipse(-3.5, 0, 10, 5, pi/3, cols[1])
+    draw_ellipse(-1.5, 2, 10, 5, pi/3, cols[2])
+    draw_ellipse(1.5, 2, 10, 5, -pi/3, cols[3])
+    draw_ellipse(3.5, 0, 10, 5, -pi/3, cols[4])
+    text(c(-9, -4, 4, 9), c(9, 12, 12, 9), names, font=2, cex=1.1)
+    
+    core <- length(Reduce(intersect, group_list))
+    text(0, 2, paste("CORE URT:", core), font=2, cex=1.2)
+  }
+
+  # --- 3. FINAL SUMMARY (THE JUDICIAL REPORT) ---
+  cat("\n--- URT SURVIVAL REPORT ---\n")
+  for(i in 1:n_groups) {
+    cat(sprintf("%s: %d reliable taxa\n", names[i], length(group_list[[i]])))
+  }
+  cat(sprintf("UNIVERSAL CORE: %d taxa\n", length(Reduce(intersect, group_list))))
+  cat("---------------------------\n")
+}
+
+# --- EXAMPLE USAGE ---
+# You can select 2, 3, or 4 Groups.
+# g1 <- c("Taxon_A", "Taxon_B", "Taxon_C")
+# g2 <- c("Taxon_B", "Taxon_C", "Taxon_D")
+# g3 <- c("Taxon_B", "Taxon_C", "Taxon_D")
+# g4 <- c("Taxon_B", "Taxon_C", "Taxon_D")
+# plot_urt_venn_manual(list(g1, g2, g3, g4), names=c("Control", "Treatment1", "Treatment2", "treatment4"))
