@@ -1,0 +1,104 @@
+# =================================================================
+# ITAGAKI-SYSTEM V2026.5.4: ABSOLUTE RECONSTRUCTION ENGINE
+# Logic: Inverse calculation of Absolute Variation using Pearson's Vt
+# A detectable invariant component is mostly something 
+# that is dominant in terms of physical mass (proportion) within the system and 
+# whose physical nature is unchanging.
+# Beware of spurious correlations. 
+# You must do the final judgment of an all-to-all pair comparison (Ohta's Asymmetry Matrix).
+# Developed by: Tatsuki Itagaki
+# Copyright (c) 2026 Tatsuki Itagaki
+# License: MIT License (https://opensource.org)
+# 
+# ACADEMIC CITATION:
+# If you use this software or its logic in your research, 
+# please cite the following works:
+# Pearson, K. (1897). DOI: 10.1098/rspl.1896.0076
+# Ohta, T. (2011).    DOI: 10.1007/s11004-011-9332-y
+# Itagaki, T (2026).  DOI: 10.13140/RG.2.2.35655.05287
+# =================================================================
+
+reconstruct_absolute_variation <- function(Dataset, anchor_name) {
+  
+  # --- 1. PHYSICAL FILTERING (UTR DEFINITION) ---
+  P_raw <- as.matrix(Dataset)
+  n_s <- nrow(P_raw)
+  sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
+  
+  # 10x Noise Floor Policy
+  is_reliable_mat <- matrix(FALSE, nrow = n_s, ncol = ncol(P_raw))
+  for(i in 1:n_s) {
+    is_reliable_mat[i, ] <- P_raw[i, ] >= (sample_minima[i] * 10)
+  }
+  valid_taxa <- colnames(P_raw)[apply(is_reliable_mat, 2, all)]
+  P_utr <- P_raw[, valid_taxa]
+  
+  if (!(anchor_name %in% valid_taxa)) {
+    stop("CRITICAL ERROR: Specified Anchor is not in UTR.")
+  }
+
+  # --- 2. EXTRACTION OF TOTAL VARIATION (Vt) ---
+  # Based on Pearson's Approximation: V(x_anchor) ≈ V(w_total)
+  # Since w_anchor is Invariant (Vw_anchor = 0)
+  x_anchor <- P_utr[, anchor_name]
+  Vt <- sd(x_anchor) / mean(x_anchor)
+  Vt_sq <- Vt^2
+
+  cat(sprintf("\n--- PEARSON'S INVERSE DIAGNOSTICS ---\n"))
+  cat(sprintf("Selected Invariant Anchor : %s\n", anchor_name))
+  cat(sprintf("Estimated Total CV (Vt)   : %.6f\n", Vt))
+  cat("-------------------------------------\n")
+
+  # --- 3. INVERSE CALCULATION OF ABSOLUTE CV (Vw_i) ---
+  # Pearson's formula rearrangement to solve for Vw_i:
+  # Vx_i^2 ≈ Vw_i^2 + Vt^2 - 2*r(wi, wt)*Vw_i*Vt
+  # Assuming near-independence or using the Anchor-Ratio directly (The "Ratio" Step)
+  
+  reconstruction_results <- data.frame(
+    Component = valid_taxa,
+    Observed_Vx = apply(P_utr, 2, function(x) sd(x)/mean(x)),
+    Absolute_Vw = NA
+  )
+
+  # Absolute Reconstruction via Invariant Anchor Ratio (The "Itagaki-Ohta" Final Step)
+  # Ratio R = x_i / x_anchor = (w_i/w_t) / (w_anchor/w_t) = w_i / w_anchor
+  # Since w_anchor is constant, V(R) = V(w_i).
+  for(i in 1:nrow(reconstruction_results)) {
+    taxon <- reconstruction_results$Component[i]
+    ratio_vec <- P_utr[, taxon] / x_anchor
+    reconstruction_results$Absolute_Vw[i] <- sd(ratio_vec) / mean(ratio_vec)
+  }
+
+  # --- 4. VISUALIZATION OF NATURAL VARIATION ---
+  # Plotting Observed vs Reconstructed Absolute Variation
+  res_sorted <- reconstruction_results[order(reconstruction_results$Absolute_Vw, decreasing = TRUE), ]
+  
+  old_par <- par(mar = c(8, 4, 4, 2))
+
+  plot_mat <- t(as.matrix(res_sorted[, c("Absolute_Vw", "Observed_Vx")]))
+  
+  bp <- barplot(plot_mat, 
+                beside = TRUE, 
+                col = c("#2980B9", "#BDC3C7"),
+                border = NA,
+                main = "Natural Absolute Variation Reconstruction",
+                ylab = "Coefficient of Variation (CV)",
+                las = 2,
+                names.arg = res_sorted$Component,
+                cex.names = 0.8)
+  
+  mtext(paste("Base Anchor:", anchor_name, "| System Vt:", round(Vt, 4)), side = 3, line = 0.5)
+  legend("topright", 
+         legend = c("Absolute (Reconstructed)", "Compositional (Observed)"), 
+         fill = c("#2980B9", "#BDC3C7"), 
+         bty = "n", cex = 0.8)
+  
+  par(old_par)
+  
+  return(reconstruction_results)
+}
+
+# Beware of spurious correlations. 
+# You must do the final judgment of an all-to-all pair comparison (Ohta's Asymmetry Matrix).
+# result <- reconstruct_absolute_variation(Dataset, "Your_Invariant_Anchor_Name")
+　
