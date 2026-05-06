@@ -22,6 +22,7 @@ reconstruct_general_absolute_flux <- function(Dataset) {
   # --- 1. PHYSICAL PRE-PROCESSING (UTR FILTERING) ---
   # Only taxa exceeding the 10x Poisson Noise Floor are analyzed.
   P_raw <- as.matrix(Dataset)
+  n_s <- nrow(P_raw)
   sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
   
   # Policy: Reliability requires a tenfold safety margin over the detection limit.
