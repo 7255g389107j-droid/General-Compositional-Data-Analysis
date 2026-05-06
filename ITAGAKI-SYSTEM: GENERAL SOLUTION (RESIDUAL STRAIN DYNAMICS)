@@ -6,6 +6,7 @@
 # Theory: Information loss (Zure) in Pearson's approximation
 #         carries the structural signature of the absolute total.
 # Developed by: Tatsuki Itagaki
+# Wednesday, May 6, 2026
 # Copyright (c) 2026 Tatsuki Itagaki
 # License: MIT License (https://opensource.org)
 # 
@@ -96,10 +97,9 @@ reconstruct_general_absolute_flux <- function(Dataset) {
 }
 
 # ------
-
-   print(result$Summary)
+# head(result$P_urt)
 
 　 result <- reconstruct_general_absolute_flux(Dataset)
   
-# head(result$P_urt) 
+   print(result$Summary)
  
