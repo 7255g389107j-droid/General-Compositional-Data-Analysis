@@ -1,0 +1,87 @@
+# =================================================================
+# ITAGAKI-SYSTEM: GENERAL SOLUTION (RESIDUAL STRAIN DYNAMICS)
+# -----------------------------------------------------------------
+# Feature: Absolute Flux Reconstruction via Residual Decoding
+# Logic: Decoding Total Volume Flux (Vt) from Pearson's Residuals
+# Theory: Information loss (Zure) in Pearson's approximation
+#         carries the structural signature of the absolute total.
+# Developed by: Tatsuki Itagaki
+# Copyright (c) 2026 Tatsuki Itagaki
+# License: MIT License (https://opensource.org)
+# 
+# ACADEMIC CITATION:
+# If you use this software or its logic in your research, 
+# please cite the following works:
+# Pearson, K. (1897). DOI: 10.1098/rspl.1896.0076
+# Ohta, T. (2011).    DOI: 10.1007/s11004-011-9332-y
+# Itagaki, T (2026).  DOI: 10.13140/RG.2.2.35655.05287
+# =================================================================
+
+reconstruct_general_absolute_flux <- function(Dataset) {
+  
+  # --- 1. PHYSICAL PRE-PROCESSING (UTR FILTERING) ---
+  # Only taxa exceeding the 10x Poisson Noise Floor are analyzed.
+  P_raw <- as.matrix(Dataset)
+  sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
+  
+  # Policy: Reliability requires a tenfold safety margin over the detection limit.
+  is_reliable <- sweep(P_raw, 1, sample_minima * 10, ">=")
+  valid_taxa <- colnames(P_raw)[apply(is_reliable, 2, all)]
+  
+  # Mathematical Constraint: Physical reconstruction requires at least 5 dimensions.
+  if(length(valid_taxa) < 5) {
+    stop("CRITICAL ERROR: Insufficient reliable dimensions (< 5 UTR).")
+  }
+  P_utr <- P_raw[, valid_taxa]
+  
+  # --- 2. COMPONENT LOG-VARIANCE ANALYSIS ---
+  # Analyzing variance in the log-transformed compositional space.
+  L <- log(P_utr)
+  v_observed <- apply(L, 2, var) # Observed variance (Vx^2)
+  
+  # --- 3. RESIDUAL STRAIN DECODING ("Zure" Analysis) ---
+  # Pearson's Approximation: Vx^2 ≈ Vw^2 + Vt^2 - 2*cov(w, t)
+  # The 'Residual Strain' represents the structural distortion 
+  # forced upon each component by the closure constraint.
+  
+  # Calculate geometric information distances (Information Wrinkles)
+  info_dist_mat <- as.matrix(dist(t(L)))
+  
+  # Strain Potential: Quantifying how much each component is 
+  # compressed by the total volume's fluctuation.
+  strain_potential <- rowMeans(info_dist_mat)
+  zure_coeff <- mean(strain_potential)
+  
+  # --- 4. INVERSE TOTAL FLUX ESTIMATION (General Solution) ---
+  # Identifying the 'Point of Minimum Tension' to isolate Vt^2.
+  # This reconstructs the latent absolute scale without a specific anchor.
+  strain_ratio <- min(strain_potential) / max(strain_potential)
+  estimated_Vt_sq <- min(v_observed) * (1 - strain_ratio)
+  estimated_Vt <- sqrt(abs(estimated_Vt_sq))
+  
+  # --- 5. ABSOLUTE VARIATION RECONSTRUCTION ---
+  # Recovering Vw (Absolute Coefficient of Variation) for all components.
+  # Vw^2 ≈ Vx^2 - Vt^2
+  vw_reconstructed <- sqrt(pmax(0, v_observed - estimated_Vt_sq))
+  
+  # --- FINAL SYSTEM REPORT ---
+  cat("\n==========================================================\n")
+  cat("      ITAGAKI GENERAL SOLUTION: ABSOLUTE RECONSTRUCTION    \n")
+  cat("==========================================================\n")
+  cat(sprintf("Estimated System Total Flux (Vt) : %.6f\n", estimated_Vt))
+  cat(sprintf("Residual Strain Coeff (Zure)     : %.6f\n", zure_coeff))
+  cat(sprintf("Analyzed Dimensions (UTR)        : %d\n", length(valid_taxa)))
+  cat("----------------------------------------------------------\n")
+  cat("Status: General Solution applied via Residual Dynamics.\n")
+  cat("==========================================================\n")
+  
+  return(data.frame(
+    Component = valid_taxa,
+    Absolute_CV = vw_reconstructed,
+    Compositional_CV = sqrt(v_observed),
+    Strain_Impact = strain_potential
+  ))
+}
+
+# --- EXECUTION ---
+　 result <- reconstruct_general_absolute_flux(Dataset)
