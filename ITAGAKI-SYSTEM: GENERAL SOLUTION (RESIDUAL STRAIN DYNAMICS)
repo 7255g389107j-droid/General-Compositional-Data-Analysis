@@ -19,7 +19,7 @@
 
 reconstruct_general_absolute_flux <- function(Dataset) {
   
-  # --- 1. PHYSICAL PRE-PROCESSING (UTR FILTERING) ---
+  # --- 1. PHYSICAL PRE-PROCESSING (URT FILTERING) ---
   # Only taxa exceeding the 10x Poisson Noise Floor are analyzed.
   P_raw <- as.matrix(Dataset)
   n_s <- nrow(P_raw)
@@ -36,13 +36,13 @@ reconstruct_general_absolute_flux <- function(Dataset) {
 
   # Mathematical Constraint: Physical reconstruction requires at least 5 dimensions.
   if(length(valid_taxa) < 5) {
-    stop("CRITICAL ERROR: Insufficient reliable dimensions (< 5 UTR).")
+    stop("CRITICAL ERROR: Insufficient reliable dimensions (< 5 URT).")
   }
-  P_utr <- P_raw[, valid_taxa]
+  P_urt <- P_raw[, valid_taxa]
   
   # --- 2. COMPONENT LOG-VARIANCE ANALYSIS ---
   # Analyzing variance in the log-transformed compositional space.
-  L <- log(P_utr)
+  L <- log(P_urt)
   v_observed <- apply(L, 2, var) # Observed variance (Vx^2)
   
   # --- 3. RESIDUAL STRAIN DECODING ("Zure" Analysis) ---
@@ -76,7 +76,7 @@ reconstruct_general_absolute_flux <- function(Dataset) {
   cat("==========================================================\n")
   cat(sprintf("Estimated System Total Flux (Vt) : %.6f\n", estimated_Vt))
   cat(sprintf("Residual Strain Coeff (Zure)     : %.6f\n", zure_coeff))
-  cat(sprintf("Analyzed Dimensions (UTR)        : %d\n", length(valid_taxa)))
+  cat(sprintf("Analyzed Dimensions (URT)        : %d\n", length(valid_taxa)))
   cat("----------------------------------------------------------\n")
   cat("Status: General Solution applied via Residual Dynamics.\n")
   cat("==========================================================\n")
