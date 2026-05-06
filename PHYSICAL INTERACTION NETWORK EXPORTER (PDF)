@@ -37,7 +37,6 @@ export_itagaki_network_pdf <- function(Dataset, filename = "True_Interaction_Net
   L <- log(P_urt) # Log-geometric space
   
   # --- 2. DECODE SYSTEM TOTAL FLUX (Vt) ---
-  # Analyzing variance and geometric Strain Potential (Information Wrinkles)
   dist_mat <- as.matrix(dist(t(L)))
   strain_potential <- rowMeans(dist_mat)
   
@@ -46,7 +45,6 @@ export_itagaki_network_pdf <- function(Dataset, filename = "True_Interaction_Net
   vt_sq <- min(v_observed) * (1 - strain_ratio)
   
   # --- 3. RECONSTRUCT TRUE ABSOLUTE FLUCTUATION (W) ---
-  # Stripping the 'Structural Drag' caused by the closure constraint
   W <- matrix(NA, nrow = n_s, ncol = ncol(P_urt))
   colnames(W) <- valid_taxa
   overall_mean_L <- rowMeans(L)
@@ -63,24 +61,26 @@ export_itagaki_network_pdf <- function(Dataset, filename = "True_Interaction_Net
   # --- 5. PDF INITIALIZATION & PLOTTING ---
   pdf(file = filename, width = 8, height = 8)
   
-  # Setup Coordinates (Circle Layout)
+  # Setup Coordinates
   theta <- seq(0, 2 * pi, length.out = n_nodes + 1)[1:n_nodes]
   x <- cos(theta)
   y <- sin(theta)
   
   # Canvas Setup
-  par(mar = c(2, 2, 4, 2))
+  par(mar = c(3, 3, 5, 3))
   plot(NULL, xlim = c(-1.6, 1.6), ylim = c(-1.6, 1.6), 
        asp = 1, axes = FALSE, xlab = "", ylab = "",
        main = "ITAGAKI-SYSTEM: True Interaction Network")
-  mtext(paste("Stripped Closure Noise (Vt) | Physical Threshold >", threshold), 3)
   
-  # Draw Edges (Physical Interactions)
+  # SUBTITLE WITH INTERPRETATION
+  mtext(paste("Stripped Closure Noise (Vt) | Threshold >", threshold), 3, line = 1.2, cex = 0.8)
+  mtext("Interpretation: Blue = Positive Sync | Red = Antagonism", 3, line = 0.2, cex = 0.9, font = 2)
+  
+  # Draw Edges
   for (i in 1:(n_nodes - 1)) {
     for (j in (i + 1):n_nodes) {
       r_val <- R_true[i, j]
       if (abs(r_val) >= threshold) {
-        # Color: Blue (Positive Sync), Red (Antagonism)
         line_col <- if (r_val > 0) rgb(0.1, 0.4, 0.8, alpha = 0.5) 
                     else           rgb(0.8, 0.2, 0.2, alpha = 0.5)
         line_wd <- abs(r_val) * 8 
@@ -92,21 +92,21 @@ export_itagaki_network_pdf <- function(Dataset, filename = "True_Interaction_Net
   # Draw Nodes and Labels
   points(x, y, pch = 21, bg = "white", col = "black", cex = 2.5, lwd = 1.5)
   text(x * 1.3, y * 1.3, labels = node_names, cex = 0.7, font = 2)
-  
+
   # Add System Footer
-  mtext(paste("Developed by T. Itagaki (2026) | DOI: 10.13140/RG.2.2.35655.05287"), 1, line=1, cex=0.6)
+  mtext(paste("XXXXXX"), 1, line=1, cex=0.6)
   
-  dev.off() # Close PDF
+  dev.off() 
   
-  # --- FINAL STATUS REPORT ---
   cat("\n==========================================================\n")
   cat("      ITAGAKI SYSTEM: PDF EXPORT SUCCESSFUL                \n")
   cat("==========================================================\n")
   cat(sprintf("Output File        : %s\n", filename))
   cat(sprintf("Estimated Vt       : %.6f\n", sqrt(max(0, vt_sq))))
-  cat(sprintf("Network Threshold  : %.2f\n", threshold))
+  cat("Interpretation     : Subtitle included in PDF.\n")
   cat("==========================================================\n")
 }
 
 # --- EXECUTION COMMAND ---
- export_itagaki_network_pdf(Dataset, threshold = 0.35)
+export_itagaki_network_pdf(Dataset, threshold = 0.35)
+ 
