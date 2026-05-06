@@ -1,0 +1,60 @@
+# =================================================================
+# ITAGAKI-SYSTEM: TRUE INTERACTION NETWORK VISUALIZER (Base R)
+# -----------------------------------------------------------------
+# Feature: Direct Visualization of Physical Correlations
+# Logic: Plotting R_true extracted via Residual Strain Dynamics
+# =================================================================
+
+visualize_true_network <- function(R_true, threshold = 0.3) {
+  
+  # 1. SETUP COORDINATES
+  # Arrange nodes in a circle to remain unbiased
+  n_nodes <- ncol(R_true)
+  node_names <- colnames(R_true)
+  theta <- seq(0, 2 * pi, length.out = n_nodes + 1)[1:n_nodes]
+  x <- cos(theta)
+  y <- sin(theta)
+  
+  # 2. INITIALIZE CANVAS
+  par(mar = c(1, 1, 3, 1))
+  plot(NULL, xlim = c(-1.5, 1.5), ylim = c(-1.5, 1.5), 
+       asp = 1, axes = FALSE, xlab = "", ylab = "",
+       main = paste0("ITAGAKI-SYSTEM: True Interaction Network\n(Threshold > ", threshold, ")"))
+  
+  # 3. DRAW EDGES (Physical Interactions)
+  # Only draw connections that exceed the physical significance threshold
+  for (i in 1:(n_nodes - 1)) {
+    for (j in (i + 1):n_nodes) {
+      r_val <- R_true[i, j]
+      
+      if (abs(r_val) >= threshold) {
+        # Line color: Blue for Positive, Red for Negative
+        line_col <- if (r_val > 0) rgb(0.1, 0.4, 0.8, alpha = 0.6) 
+                    else           rgb(0.8, 0.2, 0.2, alpha = 0.6)
+        
+        # Line width: Scaled by the strength of correlation
+        line_wd <- abs(r_val) * 10 
+        
+        lines(c(x[i], x[j]), c(y[i], y[j]), col = line_col, lwd = line_wd)
+      }
+    }
+  }
+  
+  # 4. DRAW NODES
+  points(x, y, pch = 21, bg = "white", col = "black", cex = 3, lwd = 2)
+  
+  # 5. ADD LABELS
+  # Adjust text position slightly outside the circle
+  text(x * 1.25, y * 1.25, labels = node_names, cex = 0.8, font = 2)
+  
+  cat("\n==========================================================\n")
+  cat("      NETWORK GENERATION COMPLETE (Base R)                 \n")
+  cat("==========================================================\n")
+  cat(sprintf("Threshold applied: abs(R) >= %.2f\n", threshold))
+  cat("Interpretation: Blue=Positive Sync, Red=Antagonism\n")
+  cat("==========================================================\n")
+}
+
+# --- EXECUTION ---
+ interaction_result <- reconstruct_true_correlation(Dataset)
+ visualize_true_network(interaction_result$R_true, threshold = 0.35)
