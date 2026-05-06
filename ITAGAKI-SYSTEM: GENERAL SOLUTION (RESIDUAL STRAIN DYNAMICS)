@@ -115,3 +115,5 @@ reconstruct_general_absolute_flux <- function(Dataset) {
 
 # --- EXECUTION ---
 　 result <- reconstruct_general_absolute_flux(Dataset)
+   
+   result
