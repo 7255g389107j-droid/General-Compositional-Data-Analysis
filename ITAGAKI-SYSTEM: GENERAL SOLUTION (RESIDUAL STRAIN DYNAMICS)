@@ -27,7 +27,12 @@ reconstruct_general_absolute_flux <- function(Dataset) {
   # Policy: Reliability requires a tenfold safety margin over the detection limit.
   is_reliable <- sweep(P_raw, 1, sample_minima * 10, ">=")
   valid_taxa <- colnames(P_raw)[apply(is_reliable, 2, all)]
-  
+
+  # Mathematical stability requires at least 4 samples to define a physical structure.
+  if(n_s < 4) {
+    stop("CRITICAL ERROR: Insufficient samples (< 4). Physical structure cannot be defined.")
+  }
+
   # Mathematical Constraint: Physical reconstruction requires at least 5 dimensions.
   if(length(valid_taxa) < 5) {
     stop("CRITICAL ERROR: Insufficient reliable dimensions (< 5 UTR).")
