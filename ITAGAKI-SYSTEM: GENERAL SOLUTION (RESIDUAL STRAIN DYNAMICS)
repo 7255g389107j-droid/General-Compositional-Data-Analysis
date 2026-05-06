@@ -84,16 +84,21 @@ reconstruct_general_absolute_flux <- function(Dataset) {
   cat("Status: General Solution applied via Residual Dynamics.\n")
   cat("==========================================================\n")
   
-  return(data.frame(
-    Component = valid_taxa,
-    Absolute_CV = vw_reconstructed,
-    Compositional_CV = sqrt(v_observed),
-    Strain_Impact = strain_potential
+ return(list(
+    Summary = data.frame(
+      Component = valid_taxa,
+      Absolute_CV = vw_reconstructed,
+      Compositional_CV = sqrt(v_observed),
+      Strain_Impact = strain_potential
+    ),
+    P_urt = P_urt
   ))
 }
 
 # --- EXECUTION ---
-   result
+   print(result$Summary)
 
 　 result <- reconstruct_general_absolute_flux(Dataset)
+  
+# head(result$P_urt) 
  
