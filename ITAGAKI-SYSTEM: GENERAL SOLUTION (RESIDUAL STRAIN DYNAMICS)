@@ -69,7 +69,31 @@ reconstruct_general_absolute_flux <- function(Dataset) {
   # Recovering Vw (Absolute Coefficient of Variation) for all components.
   # Vw^2 ≈ Vx^2 - Vt^2
   vw_reconstructed <- sqrt(pmax(0, v_observed - estimated_Vt_sq))
+
+  # 1. Identify which taxa are "Reliable" in each specific sample
+  # We create a logical matrix: TRUE if value >= 10x Noise Floor, FALSE otherwise
+  reliability_matrix <- matrix(FALSE, nrow = nrow(P_raw), ncol = ncol(P_raw))
+  colnames(reliability_matrix) <- colnames(P_raw)
+
+  for(i in 1:n_s) {
+    current_sample <- P_raw[i, ]
+    obs_proportions <- current_sample[current_sample > 0]
   
+      if(length(obs_proportions) > 0) {
+      # Physics-based threshold calculation
+      threshold_i <- min(obs_proportions) * 10
+      reliability_matrix[i, ] <- current_sample >= threshold_i
+    }
+  }
+  # 2. Universal Selection:
+　# Select only taxa that are "Reliable" (Non-Zero & >10x Floor) in ALL samples
+  # colSums == n_s ensures the taxon is reliable across every single individual
+  universal_reliable_mask <- colSums(reliability_matrix) == n_s
+  universal_reliable_taxa_data <- P_raw[, universal_reliable_mask]
+
+  # 3. Export to CSV
+  write.csv(universal_reliable_taxa_data, "Universal_Reliable_Taxa_ZeroFree.csv", row.names = TRUE)
+
   # --- FINAL SYSTEM REPORT ---
   cat("\n==========================================================\n")
   cat("      ITAGAKI GENERAL SOLUTION: ABSOLUTE RECONSTRUCTION    \n")
