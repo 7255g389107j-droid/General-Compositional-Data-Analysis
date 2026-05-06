@@ -1,0 +1,103 @@
+# =================================================================
+# ITAGAKI-SYSTEM: PHYSICAL INTERACTION NETWORK EXPORTER (PDF)
+# -----------------------------------------------------------------
+# Feature: Direct Export of Physical Correlations to PDF
+# Logic: Stripping closure noise (Vt) via Residual Strain Dynamics
+# Version: 2026.05.07
+# Developer: Tatsuki Itagaki
+# =================================================================
+
+export_itagaki_network_pdf <- function(Dataset, filename = "True_Interaction_Network.pdf", threshold = 0.3) {
+  
+  # --- 1. DATA PREPARATION & URT FILTERING ---
+  P_raw <- as.matrix(Dataset)
+  n_s <- nrow(P_raw)
+  
+  # Calculate 10x Noise Floor (Individual Sample Basis)
+  sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
+  is_reliable <- sweep(P_raw, 1, sample_minima * 10, ">=")
+  
+  # Extract Universal Reliable Taxa (URT)
+  valid_taxa <- colnames(P_raw)[apply(is_reliable, 2, all)]
+  
+  if(length(valid_taxa) < 5) {
+    stop("CRITICAL ERROR: Insufficient reliable dimensions (< 5 URT).")
+  }
+  
+  P_urt <- P_raw[, valid_taxa]
+  L <- log(P_urt) # Log-geometric space
+  
+  # --- 2. DECODE SYSTEM TOTAL FLUX (Vt) ---
+  # Analyzing variance and geometric Strain Potential (Information Wrinkles)
+  dist_mat <- as.matrix(dist(t(L)))
+  strain_potential <- rowMeans(dist_mat)
+  
+  v_observed <- apply(L, 2, var)
+  strain_ratio <- min(strain_potential) / max(strain_potential)
+  vt_sq <- min(v_observed) * (1 - strain_ratio)
+  
+  # --- 3. RECONSTRUCT TRUE ABSOLUTE FLUCTUATION (W) ---
+  # Stripping the 'Structural Drag' caused by the closure constraint
+  W <- matrix(NA, nrow = n_s, ncol = ncol(P_urt))
+  colnames(W) <- valid_taxa
+  overall_mean_L <- rowMeans(L)
+  
+  for(i in 1:ncol(P_urt)) {
+    W[,i] <- L[,i] - (overall_mean_L * (strain_potential[i] / sum(strain_potential)))
+  }
+  
+  # --- 4. COMPUTE TRUE CORRELATION MATRIX (R_true) ---
+  R_true <- cor(W)
+  n_nodes <- ncol(R_true)
+  node_names <- colnames(R_true)
+  
+  # --- 5. PDF INITIALIZATION & PLOTTING ---
+  pdf(file = filename, width = 8, height = 8)
+  
+  # Setup Coordinates (Circle Layout)
+  theta <- seq(0, 2 * pi, length.out = n_nodes + 1)[1:n_nodes]
+  x <- cos(theta)
+  y <- sin(theta)
+  
+  # Canvas Setup
+  par(mar = c(2, 2, 4, 2))
+  plot(NULL, xlim = c(-1.6, 1.6), ylim = c(-1.6, 1.6), 
+       asp = 1, axes = FALSE, xlab = "", ylab = "",
+       main = "ITAGAKI-SYSTEM: True Interaction Network")
+  mtext(paste("Stripped Closure Noise (Vt) | Physical Threshold >", threshold), 3)
+  
+  # Draw Edges (Physical Interactions)
+  for (i in 1:(n_nodes - 1)) {
+    for (j in (i + 1):n_nodes) {
+      r_val <- R_true[i, j]
+      if (abs(r_val) >= threshold) {
+        # Color: Blue (Positive Sync), Red (Antagonism)
+        line_col <- if (r_val > 0) rgb(0.1, 0.4, 0.8, alpha = 0.5) 
+                    else           rgb(0.8, 0.2, 0.2, alpha = 0.5)
+        line_wd <- abs(r_val) * 8 
+        lines(c(x[i], x[j]), c(y[i], y[j]), col = line_col, lwd = line_wd)
+      }
+    }
+  }
+  
+  # Draw Nodes and Labels
+  points(x, y, pch = 21, bg = "white", col = "black", cex = 2.5, lwd = 1.5)
+  text(x * 1.3, y * 1.3, labels = node_names, cex = 0.7, font = 2)
+  
+  # Add System Footer
+  mtext(paste("Developed by T. Itagaki (2026) | DOI: 10.13140/RG.2.2.35655.05287"), 1, line=1, cex=0.6)
+  
+  dev.off() # Close PDF
+  
+  # --- FINAL STATUS REPORT ---
+  cat("\n==========================================================\n")
+  cat("      ITAGAKI SYSTEM: PDF EXPORT SUCCESSFUL                \n")
+  cat("==========================================================\n")
+  cat(sprintf("Output File        : %s\n", filename))
+  cat(sprintf("Estimated Vt       : %.6f\n", sqrt(max(0, vt_sq))))
+  cat(sprintf("Network Threshold  : %.2f\n", threshold))
+  cat("==========================================================\n")
+}
+
+# --- EXECUTION COMMAND ---
+ export_itagaki_network_pdf(Dataset, threshold = 0.35)
