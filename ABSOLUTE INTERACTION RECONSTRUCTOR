@@ -1,0 +1,89 @@
+# =================================================================
+# ITAGAKI-SYSTEM: ABSOLUTE INTERACTION RECONSTRUCTOR (Base R)
+# -----------------------------------------------------------------
+# Feature: Extraction of True Correlation by Stripping Vt Noise
+# Theory: Residual Strain Decoding from Pearson's Approximation
+# Thursday, May 7, 2026
+# Developed by: Tatsuki Itagaki (2026)
+# Copyright (c) 2026 Tatsuki Itagaki
+# License: MIT License (https://opensource.org)
+# 
+# ACADEMIC CITATION:
+# If you use this software or its logic in your research, 
+# please cite the following works:
+# Pearson, K. (1897). DOI: 10.1098/rspl.1896.0076
+# Ohta, T. (2011).    DOI: 10.1007/s11004-011-9332-y
+# Itagaki, T (2026).  DOI: 10.13140/RG.2.2.35655.05287
+# =================================================================
+
+reconstruct_true_correlation <- function(Dataset) {
+  
+  # --- 1. DATA PREPARATION (Strict URT Filtering) ---
+  P_raw <- as.matrix(Dataset)
+  n_s <- nrow(P_raw)
+  
+  # Identify the 10x Noise Floor for each sample
+  sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
+  is_reliable <- sweep(P_raw, 1, sample_minima * 10, ">=")
+  
+  # Select only Universal Reliable Taxa (URT)
+  valid_taxa <- colnames(P_raw)[apply(is_reliable, 2, all)]
+  
+  if(length(valid_taxa) < 5) {
+    stop("CRITICAL ERROR: Insufficient reliable dimensions (< 5 URT).")
+  }
+  
+  P_urt <- P_raw[, valid_taxa]
+  L <- log(P_urt) # Transform to log-space for geometric analysis
+  
+  # --- 2. CALCULATE STRAIN POTENTIAL (Information Wrinkles) ---
+  # Quantifying how much each component is distorted by the closure
+  dist_mat <- as.matrix(dist(t(L)))
+  strain_potential <- rowMeans(dist_mat)
+  
+  # --- 3. DECODE TOTAL SYSTEM FLUX (Vt) ---
+  v_observed <- apply(L, 2, var)
+  strain_ratio <- min(strain_potential) / max(strain_potential)
+  vt_sq <- min(v_observed) * (1 - strain_ratio)
+  
+  # --- 4. STRIP CLOSURE NOISE (True Absolute Fluctuation) ---
+  # Removing the 'Structural Drag' caused by the latent total total
+  W <- matrix(NA, nrow = n_s, ncol = ncol(P_urt))
+  colnames(W) <- valid_taxa
+  
+  # Mean-centering adjusted by individual Strain Impact
+  overall_mean_L <- rowMeans(L)
+  for(i in 1:ncol(P_urt)) {
+    # This formula isolates W_i by removing the projected influence of Vt
+    W[,i] <- L[,i] - (overall_mean_L * (strain_potential[i] / sum(strain_potential)))
+  }
+  
+  # --- 5. COMPUTE CORRELATION MATRICES ---
+  # R_raw: Distorted by compositional constraints
+  # R_true: Pure interactions after stripping Vt
+  R_raw  <- cor(P_urt)
+  R_true <- cor(W)
+  
+  # --- FINAL SYSTEM REPORT ---
+  cat("\n==========================================================\n")
+  cat("      ITAGAKI SYSTEM: TRUE INTERACTION ANALYSIS            \n")
+  cat("==========================================================\n")
+  cat(sprintf("Estimated System Total Flux (Vt) : %.6f\n", sqrt(max(0, vt_sq))))
+  cat(sprintf("Analyzed Dimensions (URT)        : %d\n", length(valid_taxa)))
+  cat("Status: Closure-induced 'Zure' has been removed.\n")
+  cat("==========================================================\n")
+  
+  return(list(
+    R_true = R_true,
+    R_raw = R_raw,
+    Summary = data.frame(
+      Taxon = valid_taxa,
+      True_CV = sqrt(apply(W, 2, var)),
+      Strain_Impact = strain_potential
+    )
+  ))
+}
+
+
+ result <- reconstruct_true_correlation(Dataset)
+ print(result$R_true) # True interaction matrix
