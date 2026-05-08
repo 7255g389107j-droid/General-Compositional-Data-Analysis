@@ -35,6 +35,11 @@ for(i in 1:n_s) {
 }
 dev.off()
 
+# --- 0. PRE-CALCULATION OF URT LIST ---
+# Identify Taxa that are reliable in ALL samples
+urt_mask <- apply(rel_status_mat, 2, function(x) all(x == 1))
+urt_list <- colnames(P_raw)[urt_mask]
+
 # --- 1. RELIABILITY HEATMAP (Clean Axis) ---
 pdf("ITAGAKI_2_Reliability_Heatmap.pdf", width = 18, height = 12)
 layout(matrix(c(1, 2), nrow = 1), widths = c(0.88, 0.12))
@@ -43,32 +48,50 @@ sorted_rel_mat <- rel_status_mat[, order(overall_rel, decreasing = TRUE)]
 plot_rel <- t(apply(sorted_rel_mat, 2, rev))
 
 par(mar = c(15, 12, 5, 2), bg = "#FFFFFF")
-# ann = FALSE and axes = FALSE to strip all mathematical default markers
 image(1:ncol(sorted_rel_mat), 1:nrow(sorted_rel_mat), plot_rel, 
       col = c("#D5D8DC", "#F1C40F", "#2980B9"), 
       axes = FALSE, ann = FALSE)
 
-# SEPARATION: White Grid Lines
+# Grid Lines
 abline(v = seq(0.5, ncol(sorted_rel_mat) + 0.5, 1), col = "white", lwd = 1)
 abline(h = seq(0.5, nrow(sorted_rel_mat) + 0.5, 1), col = "white", lwd = 1)
 
-# X-axis: Pure Taxa Labels
+# Labels (No Indices)
 axis(1, at = 1:ncol(sorted_rel_mat), labels = colnames(sorted_rel_mat), 
      las = 2, cex.axis = 0.55, font = 2, tick = FALSE)
-# Y-axis: Pure Sample Labels
 axis(2, at = 1:nrow(sorted_rel_mat), labels = rev(sample_ids), 
      las = 1, cex.axis = 0.7, tick = FALSE)
 
 title(main = "SYSTEM RELIABILITY MAP (Physical Existence)")
-
 par(mar = c(0, 0, 0, 0)); plot.new()
 legend("center", legend = c("Reliable", "Uncertain", "Undetected"), 
        fill = c("#2980B9", "#F1C40F", "#D5D8DC"), bty = "n", title = "Status", cex = 0.9)
 dev.off()
 
 # --- 2. PHYSICAL DYNAMICS HEATMAP (Clean Axis) ---
-if(length(urt_list) >= 5) {
-  # ... (Calculations remain identical) ...
+# Ensuring urt_list exists and has sufficient dimensions
+if(exists("urt_list") && length(urt_list) >= 5) {
+  
+  P_urt <- P_raw[, urt_list]
+  L <- log(P_urt)
+  
+  # Decoding Vt (General Solution)
+  v_obs <- apply(L, 2, var)
+  dist_vec <- rowMeans(as.matrix(dist(t(L))))
+  strain_ratio <- min(dist_vec) / max(dist_vec)
+  est_Vt <- sqrt(abs(min(v_obs) * (1 - strain_ratio)))
+  
+  # Absolute Reconstruction
+  system_pulse <- scale(rowMeans(L)) * est_Vt
+  abs_log <- sweep(log(sweep(P_urt, 1, exp(rowMeans(L)), "/")), 1, system_pulse, "+")
+  
+  # Trend Matrix (-1, 0, 1)
+  trend_mat <- matrix(0, n_s-1, length(urt_list), 
+                      dimnames = list(paste0(sample_ids[-n_s],"->",sample_ids[-1]), urt_list))
+  for(i in 2:n_s) {
+    diff_val <- abs_log[i,] - abs_log[i-1,]
+    trend_mat[i-1, ] <- ifelse(diff_val > 1e-10, 1, ifelse(diff_val < -1e-10, -1, 0))
+  }
   
   pdf("ITAGAKI_3_Physical_Dynamics_Map.pdf", width = 18, height = 12)
   layout(matrix(c(1, 2), nrow = 1), widths = c(0.88, 0.12))
@@ -79,23 +102,24 @@ if(length(urt_list) >= 5) {
         col = c("#FF3333", "#FFFFFF", "#3333FF"), 
         axes = FALSE, ann = FALSE)
 
-  # SEPARATION: Clean Grid Lines
+  # Grid Lines
   abline(v = seq(0.5, ncol(trend_mat) + 0.5, 1), col = "gray95", lwd = 1)
   abline(h = seq(0.5, nrow(trend_mat) + 0.5, 1), col = "gray95", lwd = 1)
   
-  # X-axis: Pure URT Labels
+  # Labels (No Indices)
   axis(1, at = 1:ncol(trend_mat), labels = colnames(trend_mat), 
        las = 2, cex.axis = 0.55, font = 2, tick = FALSE)
-  # Y-axis: Pure Interval Labels
   axis(2, at = 1:nrow(trend_mat), labels = rev(rownames(trend_mat)), 
        las = 1, cex.axis = 0.65, tick = FALSE)
   
   title(main = "TRUE PHYSICAL DYNAMICS MAP (Absolute Flux)")
-
   par(mar = c(0, 0, 0, 0)); plot.new()
   legend("center", legend = c("Gain (+1)", "Stable (0)", "Loss (-1)"), 
          fill = c("#3333FF", "#FFFFFF", "#FF3333"), bty = "n", title = "Physical Trend", cex = 0.9)
   dev.off()
+  
+  cat("\n[SYSTEM COMPLETE] All maps generated successfully.\n")
+} else {
+  cat("\n[STOP] Insufficient URT dimensions (< 5) to generate Dynamics Map.\n")
 }
 
-cat("\n[CLEANED] Mathematical indices removed. Only Physical Labels remain.\n")
