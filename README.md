@@ -50,6 +50,6 @@ This project is licensed under the MIT License - see the [LICENSE](https://opens
 ---
 **Developed by:** Tatsuki Itagaki (2026)  
 *Reliability is the shortest path to truth.*
-# This is something I gained only by acknowledging my defeat and reflecting on it. This system would not have been possible without Pearson, Professor Ohta, and the person who taught me statistics.
+# This is something I gained only by acknowledging my defeat and reflecting on it. This system would not exist without Pearson, Professor Ohta, and the mentor who taught me statistics.
 
 *For information on how to identify invariant components, please refer to another repository.*
