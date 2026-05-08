@@ -51,7 +51,7 @@ itagaki_general_solution <- function(Dataset) {
   estimated_Vt <- sqrt(abs(estimated_Vt_sq))
   
   # 3. PHYSICAL RE-INJECTION (REWRITING CLR SPACE)
-  # Washing Aitchison's noise and injecting the physical pulse.
+  # Washing noise and injecting the physical pulse.
   geom_mean <- exp(rowMeans(L))
   clr_matrix <- log(sweep(P_urt, 1, geom_mean, "/"))
   
