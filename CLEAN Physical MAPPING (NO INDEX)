@@ -1,0 +1,101 @@
+# =================================================================
+# ITAGAKI-SYSTEM V2026: CLEAN Physical MAPPING (NO INDEX)
+# -----------------------------------------------------------------
+# Feature: Removal of mathematical indices (1, 2, 3...)
+# Fix: Pure label-based axes for URT and Dynamics
+# Developed by: Tatsuki Itagaki
+# =================================================================
+
+# --- 1. DATA PREPARATION ---
+P_raw <- as.matrix(Dataset[, colSums(Dataset != 0) > 0])
+sample_ids <- rownames(P_raw)
+if(is.null(sample_ids)) sample_ids <- paste0("S_", 1:nrow(P_raw))
+n_s <- nrow(P_raw); n_t <- ncol(P_raw)
+
+rel_status_mat <- matrix(-1, nrow=n_s, ncol=n_t, dimnames=list(sample_ids, colnames(P_raw)))
+
+# [PDF 1] Individual Profiles (Log-Scale)
+pdf("ITAGAKI_1_Reliability_Profiles.pdf", width = 16, height = 10)
+for(i in 1:n_s) {
+  curr <- P_raw[i, ]; nz <- curr[curr > 0]
+  if(length(nz) > 0) {
+    floor_i <- min(nz)
+    rel_status_mat[i, curr > 0] <- ifelse(curr[curr > 0] >= (floor_i * 10), 1, 0)
+    par(mar = c(12, 8, 6, 4), bg = "#FDFDFD", las = 1)
+    y_plot <- sort(nz, decreasing = TRUE)
+    plot(y_plot, type = "h", lwd = 8, lend = 1, log = "y", yaxt = "n", xaxt = "n", 
+         xlab = "", ylab = "Proportion (Log Scale)",
+         main = paste("PHYSICAL RELIABILITY PROFILE:", sample_ids[i]), 
+         ylim = c(floor_i * 0.1, 2), col = "#2C3E50")
+    at_y <- 10^(seq(floor(log10(floor_i * 0.1)), 0, 1))
+    axis(2, at = at_y, labels = parse(text = paste0("10^", log10(at_y))), cex.axis = 0.9)
+    axis(1, at = 1:length(nz), labels = names(y_plot), las = 2, cex.axis = 0.6)
+    abline(h = c(floor_i, floor_i * 10), col = c("#E74C3C", "#F1C40F"), lty = c(2, 3), lwd = 2)
+  }
+}
+dev.off()
+
+# --- 1. RELIABILITY HEATMAP (Clean Axis) ---
+pdf("ITAGAKI_2_Reliability_Heatmap.pdf", width = 18, height = 12)
+layout(matrix(c(1, 2), nrow = 1), widths = c(0.88, 0.12))
+overall_rel <- colSums(rel_status_mat == 1)
+sorted_rel_mat <- rel_status_mat[, order(overall_rel, decreasing = TRUE)]
+plot_rel <- t(apply(sorted_rel_mat, 2, rev))
+
+par(mar = c(15, 12, 5, 2), bg = "#FFFFFF")
+# ann = FALSE and axes = FALSE to strip all mathematical default markers
+image(1:ncol(sorted_rel_mat), 1:nrow(sorted_rel_mat), plot_rel, 
+      col = c("#D5D8DC", "#F1C40F", "#2980B9"), 
+      axes = FALSE, ann = FALSE)
+
+# SEPARATION: White Grid Lines
+abline(v = seq(0.5, ncol(sorted_rel_mat) + 0.5, 1), col = "white", lwd = 1)
+abline(h = seq(0.5, nrow(sorted_rel_mat) + 0.5, 1), col = "white", lwd = 1)
+
+# X-axis: Pure Taxa Labels
+axis(1, at = 1:ncol(sorted_rel_mat), labels = colnames(sorted_rel_mat), 
+     las = 2, cex.axis = 0.55, font = 2, tick = FALSE)
+# Y-axis: Pure Sample Labels
+axis(2, at = 1:nrow(sorted_rel_mat), labels = rev(sample_ids), 
+     las = 1, cex.axis = 0.7, tick = FALSE)
+
+title(main = "SYSTEM RELIABILITY MAP (Physical Existence)")
+
+par(mar = c(0, 0, 0, 0)); plot.new()
+legend("center", legend = c("Reliable", "Uncertain", "Undetected"), 
+       fill = c("#2980B9", "#F1C40F", "#D5D8DC"), bty = "n", title = "Status", cex = 0.9)
+dev.off()
+
+# --- 2. PHYSICAL DYNAMICS HEATMAP (Clean Axis) ---
+if(length(urt_list) >= 5) {
+  # ... (Calculations remain identical) ...
+  
+  pdf("ITAGAKI_3_Physical_Dynamics_Map.pdf", width = 18, height = 12)
+  layout(matrix(c(1, 2), nrow = 1), widths = c(0.88, 0.12))
+  plot_dyn <- t(apply(trend_mat, 2, rev))
+  
+  par(mar = c(15, 12, 5, 2), bg = "#FFFFFF")
+  image(1:ncol(trend_mat), 1:nrow(trend_mat), plot_dyn, 
+        col = c("#FF3333", "#FFFFFF", "#3333FF"), 
+        axes = FALSE, ann = FALSE)
+
+  # SEPARATION: Clean Grid Lines
+  abline(v = seq(0.5, ncol(trend_mat) + 0.5, 1), col = "gray95", lwd = 1)
+  abline(h = seq(0.5, nrow(trend_mat) + 0.5, 1), col = "gray95", lwd = 1)
+  
+  # X-axis: Pure URT Labels
+  axis(1, at = 1:ncol(trend_mat), labels = colnames(trend_mat), 
+       las = 2, cex.axis = 0.55, font = 2, tick = FALSE)
+  # Y-axis: Pure Interval Labels
+  axis(2, at = 1:nrow(trend_mat), labels = rev(rownames(trend_mat)), 
+       las = 1, cex.axis = 0.65, tick = FALSE)
+  
+  title(main = "TRUE PHYSICAL DYNAMICS MAP (Absolute Flux)")
+
+  par(mar = c(0, 0, 0, 0)); plot.new()
+  legend("center", legend = c("Gain (+1)", "Stable (0)", "Loss (-1)"), 
+         fill = c("#3333FF", "#FFFFFF", "#FF3333"), bty = "n", title = "Physical Trend", cex = 0.9)
+  dev.off()
+}
+
+cat("\n[CLEANED] Mathematical indices removed. Only Physical Labels remain.\n")
