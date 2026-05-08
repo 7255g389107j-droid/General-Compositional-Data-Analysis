@@ -19,6 +19,11 @@
 
 # --- 0. PREPARATION ---
 # Ensure URT extraction from the reliability check
+P_raw <- as.matrix(Dataset[, colSums(Dataset != 0) > 0])
+sample_ids <- rownames(P_raw)
+if(is.null(sample_ids)) sample_ids <- paste0("S_", 1:nrow(P_raw))
+n_s <- nrow(P_raw); n_t <- ncol(P_raw)
+rel_status_mat <- matrix(-1, nrow=n_s, ncol=n_t, dimnames=list(sample_ids, colnames(P_raw)))
 urt_mask <- apply(rel_status_mat, 2, function(x) all(x == 1))
 urt_list <- colnames(P_raw)[urt_mask]
 
