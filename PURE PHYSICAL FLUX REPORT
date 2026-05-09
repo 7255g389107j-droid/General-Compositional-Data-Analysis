@@ -54,5 +54,5 @@ if(exists("abs_log") && exists("urt_list")) {
   cat("==========================================================\n")
 
 } else {
-  cat("\n[ERROR] Physical logs (abs_log) not found. Run General Solution first.\n")
+  cat("\n[ERROR] Physical logs (abs_log) not found. Run CONSOLIDATED DYNAMICS first.\n")
 }
