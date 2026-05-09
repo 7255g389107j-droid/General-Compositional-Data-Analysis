@@ -1,0 +1,107 @@
+# =================================================================
+# ITAGAKI-SYSTEM V2026.FINAL: CAUSAL DETERMINISM & RESILIENCE (FIXED)
+# -----------------------------------------------------------------
+# Feature: Absolute Reconstruction via Matrix-Consistent Strain
+# Developed by: Tatsuki Itagaki
+# Saturday, May 9, 2026
+# Copyright (c) 2026 Tatsuki Itagaki
+# License: MIT License (https://opensource.org)
+# 
+# ACADEMIC CITATION:
+# If you use this software or its logic in your research, 
+# please cite the following works:
+# Pearson, K. (1897). DOI: 10.1098/rspl.1896.0076
+# Ohta, T. (2011).    DOI: 10.1007/s11004-011-9332-y
+# Itagaki, T (2026).  DOI: 10.13140/RG.2.2.35655.05287
+# Perri, F. Ohta, T. (2014). DOI: 10.1016/j.palaeo.2013.12.029
+# =================================================================
+
+evaluate_itagaki_full_paradigm <- function(Dataset, threshold = 0.35) {
+  
+  # --- 1. POLICY A & URT EXTRACTION ---
+  P_raw <- as.matrix(Dataset)
+  sample_ids <- rownames(P_raw)
+  n_s <- nrow(P_raw)
+  
+  sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
+  is_reliable <- sweep(P_raw, 1, sample_minima * 10, ">=")
+  valid_taxa <- colnames(P_raw)[apply(is_reliable, 2, all)]
+  
+  if(length(valid_taxa) < 5) stop("CRITICAL ERROR: Insufficient dimensions.")
+  
+  P_urt <- P_raw[, valid_taxa]
+  L <- log(P_urt)
+  n_t <- ncol(P_urt)
+
+  # --- 2. DECODING PHYSICAL DYNAMICS (Vt & W) ---
+  dist_mat <- as.matrix(dist(t(L)))
+  strain_pot <- rowMeans(dist_mat)
+  v_obs <- apply(L, 2, var)
+  
+  # Decoding Vt
+  strain_ratio <- min(strain_pot) / max(strain_pot)
+  vt_sq <- min(v_obs) * (1 - strain_ratio)
+  est_Vt <- sqrt(max(0, vt_sq))
+  
+  # Absolute Reconstruction (W) - Fixed Matrix Consistency
+  # Each Taxon's contribution to the system flux based on its strain potential
+  strain_weight <- strain_pot / sum(strain_pot)
+  W <- matrix(0, n_s, n_t, dimnames = list(sample_ids, valid_taxa))
+  row_means_L <- rowMeans(L)
+  
+  for(j in 1:n_t) {
+    W[, j] <- L[, j] - (row_means_L * strain_weight[j])
+  }
+  R_abs <- cor(W) 
+
+  # --- 3. PHYSICAL CAUSALITY (ASYMMETRY MATRIX) ---
+  asym_mat <- matrix(0, n_t, n_t, dimnames = list(valid_taxa, valid_taxa))
+  for(i in 1:n_t) {
+    for(j in 1:n_t) {
+      if(i == j) next
+      cv_ij <- sd(P_urt[,i]/P_urt[,j]) / mean(P_urt[,i]/P_urt[,j])
+      cv_ji <- sd(P_urt[,j]/P_urt[,i]) / mean(P_urt[,j]/P_urt[,i])
+      if(cv_ij < cv_ji) asym_mat[j, i] <- 1 
+    }
+  }
+
+  # --- 4. SYSTEM RESILIENCE EVALUATION ---
+  resilience_score <- 1 - (sum(strain_pot) / (sum(v_obs) + sum(strain_pot)))
+
+  # --- 5. VISUALIZATION: CAUSAL NETWORK ---
+  pdf("ITAGAKI_FINAL_CAUSAL_NETWORK.pdf", width = 12, height = 12)
+  layout(matrix(c(1, 2), nrow = 2), heights = c(0.8, 0.2))
+  
+  theta <- seq(0, 2*pi, length.out = n_t + 1)[1:n_t]
+  x <- cos(theta); y <- sin(theta)
+  
+  par(mar = c(3, 3, 5, 3))
+  plot(NULL, xlim=c(-1.8, 1.8), ylim=c(-1.8, 1.8), asp=1, axes=F, ann=F)
+  title(main="ITAGAKI-SYSTEM: CAUSAL DETERMINISM NETWORK", cex.main=1.5)
+  mtext(sprintf("Resilience Score: %.4f | Decoded Vt: %.4f", resilience_score, est_Vt), 3, line=0.5)
+
+  # Draw Arrows
+  for(i in 1:n_t) {
+    for(j in 1:n_t) {
+      if(i == j) next
+      if(abs(R_abs[i,j]) >= threshold && asym_mat[i,j] == 1) {
+        col_edge <- if(R_abs[i,j] > 0) rgb(0.1, 0.4, 0.8, 0.6) else rgb(0.8, 0.2, 0.2, 0.6)
+        arrows(x[i]*0.9, y[i]*0.9, x[j]*0.9, y[j]*0.9, col=col_edge, lwd=abs(R_abs[i,j])*10, length=0.15)
+      }
+    }
+  }
+  
+  points(x, y, pch=21, bg="white", cex=3, lwd=2) # Fixed: cex=3
+  text(x*1.3, y*1.3, labels=valid_taxa, font=2, cex=0.8)
+
+  plot.new()
+  text(0.5, 0.5, paste("RESILIENCE INTERPRETATION:", 
+       ifelse(resilience_score > 0.7, "HIGH (Stable)", 
+       ifelse(resilience_score > 0.4, "MODERATE", "LOW (Chaos)"))), font=2)
+  dev.off()
+
+  return(list(Vt=est_Vt, Resilience=resilience_score, Causality=asym_mat))
+}
+
+  result <- evaluate_itagaki_full_paradigm(Dataset)
+  result
