@@ -50,6 +50,6 @@ This project is licensed under the MIT License - see the [LICENSE](https://opens
 ---
 **Developed by:** Tatsuki Itagaki (2026)  
 *Reliability is the shortest path to truth.*
-# This is something I gained only by acknowledging my defeat and reflecting on it. This system would not exist without Pearson, Professor Ohta, and the mentor who taught me statistics.
+# This is something I gained only by acknowledging my defeat and reflecting on it. This system would not exist without Pearson, Professor Ohta, and the mentor (Norio Sugimoto) who taught me statistics.
 
 *For information on my defeat, please refer to another repository.*
