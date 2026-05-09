@@ -105,3 +105,4 @@ evaluate_itagaki_full_paradigm <- function(Dataset, threshold = 0.35) {
 
   result <- evaluate_itagaki_full_paradigm(Dataset)
   result
+  sort(rowSums(result$Causality), decreasing = TRUE)
