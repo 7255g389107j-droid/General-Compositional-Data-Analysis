@@ -1,0 +1,20 @@
+# =================================================================
+# ITAGAKI-SYSTEM: PHYSICAL CORRELATION RECONSTRUCTION
+# -----------------------------------------------------------------
+# Logic: Re-evaluating Relationships in Absolute Space
+# Comparison: Mathematical (CLR) Correlation vs. Physical (Absolute) Correlation
+# =================================================================
+
+# 1. Calculate Correlation Matrices
+cor_relative <- cor(result$Compositional_CLR) 
+cor_absolute <- cor(result$Absolute_Truth)    
+
+# 2. Identify "The Great Reversals"
+# Taxa pairs where Relative says "Negative" but Absolute says "Positive"
+reversal_matrix <- (cor_relative < 0 & cor_absolute > 0.5)
+
+cat("\n--- THE GREAT REVERSALS (Rescued Correlations) ---\n")
+print(which(reversal_matrix, arr.ind = TRUE))
+
+# 3. Final Step: Ohta's Asymmetry Matrix (AI Index per Pair)
+# This identifies the physical hierarchy of the system
