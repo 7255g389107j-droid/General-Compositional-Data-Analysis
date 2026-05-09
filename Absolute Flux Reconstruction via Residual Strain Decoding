@@ -28,12 +28,12 @@ itagaki_general_solution <- function(Dataset) {
   sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
   is_reliable_mat <- sweep(P_raw, 1, sample_minima * 10, ">=")
   
-  # Extraction of Universally Reliable Taxa (UTR)
+  # Extraction of Universally Reliable Taxa (URT)
   # Only taxa that survive the noise floor in ALL samples are rescued.
   valid_taxa <- colnames(P_raw)[apply(is_reliable_mat, 2, all)]
   
   if(length(valid_taxa) < 5) {
-    stop("CRITICAL ERROR: Insufficient physical dimensions (< 5 UTR). Data is too noisy.")
+    stop("CRITICAL ERROR: Insufficient physical dimensions (< 5 URT). Data is too noisy.")
   }
   
   P_urt <- P_raw[, valid_taxa]
@@ -64,7 +64,7 @@ itagaki_general_solution <- function(Dataset) {
   cat("\n==========================================================\n")
   cat("      ITAGAKI GENERAL SOLUTION: ABSOLUTE RECONSTRUCTION    \n")
   cat("==========================================================\n")
-  cat(sprintf("Analyzed Dimensions (UTR)  : %d\n", length(valid_taxa)))
+  cat(sprintf("Analyzed Dimensions (URT)  : %d\n", length(valid_taxa)))
   cat(sprintf("Decoded System Pulse (Vt)  : %.6f\n", estimated_Vt))
   cat("Status: Mathematical noise washed. Physical truth re-injected.\n")
   cat("==========================================================\n")
@@ -72,7 +72,7 @@ itagaki_general_solution <- function(Dataset) {
   return(list(
     Absolute_Truth = absolute_log_truth,
     Compositional_CLR = clr_matrix,
-    UTR_Data = P_urt,
+    URT_Data = P_urt,
     Vt = estimated_Vt
   ))
 }
