@@ -23,6 +23,7 @@ If you use this software or its logic in your research, please cite the followin
 2. **Ohta, T.    (2011).**  DOI: [10.1007/s11004-011-9332-y](https://doi.org/10.1007/s11004-011-9332-y)
 3. **Itagaki, T. (2026).**  DOI: [10.13140/RG.2.2.35655.05287](https://doi.org/10.13140/RG.2.2.35655.05287)
 4. **Perri, F. Ohta, T. (2014).** DOI: [10.1016/j.palaeo.2013.12.029](https://doi.org/10.1016/j.palaeo.2013.12.029)
+5. **Itagaki, T (2026).** DOI: [10.13140/RG.2.2.21982.60486](https://doi.org/10.13140/RG.2.2.21982.60486)
 ## 🚀 Getting Started
 
 ### Prerequisites
