@@ -30,7 +30,12 @@ export_itagaki_network_pdf <- function(Dataset, filename = "True_Interaction_Net
   
   # Extract Universal Reliable Taxa (URT)
   valid_taxa <- colnames(P_raw)[apply(is_reliable, 2, all)]
-  
+
+  # Mathematical stability requires at least 4 samples to define a physical structure.
+  if(n_s < 4) {
+    stop("CRITICAL ERROR: Insufficient samples (< 4). Physical structure cannot be defined.")
+  }
+
   if(length(valid_taxa) < 5) {
     stop("CRITICAL ERROR: Insufficient reliable dimensions (< 5 URT).")
   }
