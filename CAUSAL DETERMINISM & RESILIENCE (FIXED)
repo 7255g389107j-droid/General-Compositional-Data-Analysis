@@ -27,7 +27,12 @@ evaluate_itagaki_full_paradigm <- function(Dataset, threshold = 0.35) {
   sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
   is_reliable <- sweep(P_raw, 1, sample_minima * 10, ">=")
   valid_taxa <- colnames(P_raw)[apply(is_reliable, 2, all)]
-  
+
+  # Mathematical stability requires at least 4 samples to define a physical structure.
+  if(n_s < 4) {
+    stop("CRITICAL ERROR: Insufficient samples (< 4). Physical structure cannot be defined.")
+  }
+
   if(length(valid_taxa) < 5) stop("CRITICAL ERROR: Insufficient dimensions.")
   
   P_urt <- P_raw[, valid_taxa]
