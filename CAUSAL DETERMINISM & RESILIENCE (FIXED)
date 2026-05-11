@@ -2,6 +2,11 @@
 # ITAGAKI-SYSTEM V2026.FINAL: CAUSAL DETERMINISM & RESILIENCE (FIXED)
 # -----------------------------------------------------------------
 # Feature: Absolute Reconstruction via Matrix-Consistent Strain
+# WARNING:
+# This system does NOT restore physical units (mg/L, counts, etc.).
+# It only identifies the "Direction of Interaction" by stripping
+# the mathematical distortion inherent in compositional data.
+# The 'True' in R_true refers to the topological structure, not the scale.
 # Developed by: Tatsuki Itagaki
 # Saturday, May 9, 2026
 # Copyright (c) 2026 Tatsuki Itagaki
