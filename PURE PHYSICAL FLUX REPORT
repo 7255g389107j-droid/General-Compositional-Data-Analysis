@@ -3,6 +3,10 @@
 # -----------------------------------------------------------------
 # Feature: Direct reporting of Absolute Log-Fold Changes
 # Focus: Physical Truth (No comparison to mathematical noise)
+# WARNING: 
+# This system does NOT restore physical units (mg/L, counts, etc.). 
+# It only estimate the trends.
+# The trend may not be true.
 # Developed by: Tatsuki Itagaki
 # Saturday, May 9, 2026
 # Copyright (c) 2026 Tatsuki Itagaki
@@ -57,3 +61,8 @@ if(exists("abs_log") && exists("urt_list")) {
 } else {
   cat("\n[ERROR] Physical logs (abs_log) not found. Run CONSOLIDATED DYNAMICS first.\n")
 }
+
+# WARNING: 
+# This system does NOT restore physical units (mg/L, counts, etc.). 
+# It only estimate the trends.
+# The trend may not be true.
