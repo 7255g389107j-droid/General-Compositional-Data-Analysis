@@ -5,6 +5,11 @@
 # Logic: Decoding Total Volume Flux (Vt) from Pearson's Residuals
 # Theory: Information loss (Zure) in Pearson's approximation
 #         carries the structural signature of the absolute total.
+# WARNING: 
+# This system does NOT restore physical units (mg/L, counts, etc.). 
+# It only estimate the trends.
+# The Reconstruct_CV may not be true.
+# Strain_Impact is ture.
 # Developed by: Tatsuki Itagaki
 # Wednesday, May 6, 2026
 # Copyright (c) 2026 Tatsuki Itagaki
@@ -90,7 +95,7 @@ reconstruct_general_absolute_flux <- function(Dataset) {
  return(list(
     Summary = data.frame(
       Component = valid_taxa,
-      Absolute_CV = vw_reconstructed,
+      Reconstruct_CV = vw_reconstructed,
       Compositional_CV = sqrt(v_observed),
       Strain_Impact = strain_potential
     ),
