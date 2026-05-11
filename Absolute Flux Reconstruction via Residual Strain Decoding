@@ -37,7 +37,12 @@ itagaki_general_solution <- function(Dataset) {
   # Extraction of Universally Reliable Taxa (URT)
   # Only taxa that survive the noise floor in ALL samples are rescued.
   valid_taxa <- colnames(P_raw)[apply(is_reliable_mat, 2, all)]
-  
+
+  # Mathematical stability requires at least 4 samples to define a physical structure.
+  if(n_s < 4) {
+    stop("CRITICAL ERROR: Insufficient samples (< 4). Physical structure cannot be defined.")
+  }
+
   if(length(valid_taxa) < 5) {
     stop("CRITICAL ERROR: Insufficient physical dimensions (< 5 URT). Data is too noisy.")
   }
