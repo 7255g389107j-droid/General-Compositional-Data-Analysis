@@ -102,3 +102,55 @@ if(length(urt_list) >= 5) {
 } else {
   cat("\n[ERROR] URT Count:", length(urt_list), ". Insufficient reliable dimensions.\n")
 }
+
+# =================================================================
+# ITAGAKI-SYSTEM V2026: PURE PHYSICAL FLUX REPORT
+# -----------------------------------------------------------------
+# Feature: Direct reporting of Absolute Log-Fold Changes
+# Focus: Physical Truth (No comparison to mathematical noise)
+# =================================================================
+
+if(exists("abs_log") && exists("urt_list")) {
+  
+  n_intervals <- nrow(abs_log) - 1
+  n_taxa <- ncol(abs_log)
+  
+  cat("\n==========================================================\n")
+  cat("      ITAGAKI-SYSTEM: ABSOLUTE PHYSICAL FLUX REPORT       \n")
+  cat("==========================================================\n")
+  cat(sprintf("Tracking physical dynamics for %d samples across %d taxa.\n", n_intervals + 1, n_taxa))
+  cat(sprintf("%-25s | %-10s | %s\n", "Interval", "Component", "Log-Fold Change (Absolute)"))
+  cat("----------------------------------------------------------\n")
+
+  for(i in 1:n_intervals) {
+    for(j in 1:n_taxa) {
+      # The raw physical difference in absolute log-space
+      phys_diff <- abs_log[i+1, j] - abs_log[i, j]
+      
+      # Status based on the physical sign
+      status <- ifelse(phys_diff > 1e-10, "INCREASE", 
+                ifelse(phys_diff < -1e-10, "DECREASE", "STABLE"))
+      
+      # Output the absolute magnitude of the change
+      cat(sprintf("%-25s | %-10s | %-10s (%+.6f)\n", 
+                  paste0(sample_ids[i], "->", sample_ids[i+1]), 
+                  colnames(abs_log)[j], 
+                  status, 
+                  phys_diff))
+    }
+    cat("----------------------------------------------------------\n")
+  }
+  
+  cat("==========================================================\n")
+  cat("Values > 0 indicate a physical increase in absolute mass.\n")
+  cat("Values < 0 indicate a physical decrease in absolute mass.\n")
+  cat("==========================================================\n")
+
+} else {
+  cat("\n[ERROR] Physical logs (abs_log) not found. Run CONSOLIDATED DYNAMICS first.\n")
+}
+
+# WARNING: 
+# This system does NOT restore physical units (mg/L, counts, etc.). 
+# It only estimate the trends.
+# The trend may not be true.
