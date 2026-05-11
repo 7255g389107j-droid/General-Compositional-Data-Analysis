@@ -1,97 +1,94 @@
 # =================================================================
-# ITAGAKI-SYSTEM: OBJECTIVE TOPOLOGICAL MAPPING (BASE R EDITION)
+# ITAGAKI-SYSTEM: COMPLETE OBJECTIVE METRICS & RANKING (V.2026.FINAL)
 # -----------------------------------------------------------------
-# Feature: Resilience, Strain Impact, and MDS-based Positioning
-# Logic: Node Color = Strain Potential | Position = Physical Distance
-# Version: 2026.05.11 (Base R Final)
-# Developer: Tatsuki Itagaki
+# Feature: Full Numerical Extraction (URT, Strain, Resilience, Rank)
+# Output:  Formal Console Report with Ordinal Hierarchy
+# Logic:   Absolute Matrix Consistent Calculation (Zero Subjectivity)
 # =================================================================
 
-export_itagaki_base_map <- function(Dataset, filename = "Itagaki_Objective_Map_BaseR.pdf", threshold = 0.35) {
+extract_itagaki_complete_facts <- function(Dataset) {
   
-  # --- 1. DATA PRE-PROCESSING ---
+  # --- 1. URT EXTRACTION (Universally Reliable Taxa) ---
+  # Objective filtering based on the 10x Poisson Noise Floor
   P_raw <- as.matrix(Dataset)
   n_s <- nrow(P_raw)
+  
+  # Calculate detection limit per sample
   sample_minima <- apply(P_raw, 1, function(x) min(x[x > 0]))
+  
+  # Logical mask for reliability (10x safety margin)
   is_reliable <- sweep(P_raw, 1, sample_minima * 10, ">=")
+  
+  # Define valid taxa present in all samples above the threshold
   valid_taxa <- colnames(P_raw)[apply(is_reliable, 2, all)]
 
-  if(n_s < 4 || length(valid_taxa) < 5) stop("CRITICAL: Insufficient structure.")
-
-  P_urt <- P_raw[, valid_taxa]
-  L <- log(P_urt)
-  n_t <- ncol(L)
-  
-  # --- 2. OBJECTIVE METRICS (Strain & Resilience) ---
-  dist_mat <- as.matrix(dist(t(L)))
-  strain_potential <- rowMeans(dist_mat)
-  v_obs <- apply(L, 2, var)
-  resilience_score <- 1 - (sum(strain_potential) / (sum(v_obs) + sum(strain_potential)))
-  
-  # --- 3. RECONSTRUCT PHYSICAL CORRELATION (R_abs) ---
-  strain_weight <- strain_potential / sum(strain_potential)
-  W <- matrix(0, n_s, n_t, dimnames = list(rownames(L), valid_taxa))
-  row_means_L <- rowMeans(L)
-  for(j in 1:n_t) { W[, j] <- L[, j] - (row_means_L * strain_weight[j]) }
-  R_abs <- cor(W)
-
-  # --- 4. TOPOLOGICAL POSITIONING (MDS) ---
-  # Convert correlation to physical distance: d = sqrt(2*(1-r))
-  dist_obj <- as.dist(sqrt(pmax(0, 2 * (1 - R_abs))))
-  fit <- cmdscale(dist_obj, k = 2) # Multidimensional Scaling
-  x <- fit[, 1]; y <- fit[, 2]
-
-  # --- 5. VISUAL MAPPING (PDF) ---
-  pdf(filename, width = 10, height = 11)
-  par(mar = c(5, 5, 7, 5))
-  
-  # Plot canvas
-  plot(x, y, type = "n", asp = 1, axes = FALSE, xlab = "", ylab = "",
-       xlim = c(min(x)*1.5, max(x)*1.5), ylim = c(min(y)*1.5, max(y)*1.5),
-       main = "ITAGAKI-SYSTEM: Objective Topological Map")
-
-  # Headers (Objective Facts)
-  mtext(sprintf("System Resilience Score: %.4f", resilience_score), 3, line = 1.2, cex = 1.3, font = 2)
-  mtext("Position: Physical Similarity (MDS) | Color: Strain Impact Intensity", 3, line = 0.2, cex = 0.9)
-
-  # Draw Interaction Edges (Relationships)
-  for (i in 1:(n_t - 1)) {
-    for (j in (i + 1):n_t) {
-      r_val <- R_abs[i, j]
-      if (abs(r_val) >= threshold) {
-        lcol <- if (r_val > 0) rgb(0.1, 0.4, 0.8, 0.4) else rgb(0.8, 0.2, 0.2, 0.4)
-        lines(c(x[i], x[j]), c(y[i], y[j]), col = lcol, lwd = abs(r_val) * 8)
-      }
-    }
+  # Strict mathematical constraints for structural definition
+  if(n_s < 4) {
+    stop("CRITICAL ERROR: Insufficient samples (< 4).")
+  }
+  if(length(valid_taxa) < 5) {
+    stop("CRITICAL ERROR: Insufficient reliable dimensions (< 5 URT).")
   }
 
-  # Draw Nodes (Strain Impact)
-  # Color scale from Grey (Low) to Deep Orange (High)
-  col_func <- colorRamp(c("#E0E0E0", "#FF4500"))
-  strain_norm <- (strain_potential - min(strain_potential)) / (diff(range(strain_potential)))
-  node_cols <- rgb(col_func(strain_norm), maxColorValue = 255)
+  P_urt <- P_raw[, valid_taxa]
+  L <- log(P_urt) # Conversion to log-compositional space
+  n_t <- ncol(L)
   
-  points(x, y, pch = 21, bg = node_cols, col = "#333333", cex = 4, lwd = 1.5)
-  text(x, y, labels = 1:n_t, cex = 0.7, font = 2) # Index labels
+  # --- 2. CALCULATION OF STRAIN POTENTIAL ---
+  # Calculating the average information distance for each component
+  dist_mat <- as.matrix(dist(t(L)))
+  strain_potential <- rowMeans(dist_mat)
   
-  # Label Legend (Component Mapping)
-  legend_text <- paste0(1:n_t, ": ", valid_taxa)
-  legend("bottomleft", legend = legend_text, cex = 0.6, bty = "n", ncol = 3, title = "Universally Reliable Taxa")
-  
-  # Strain Legend
-  legend("bottomright", legend = c("High Strain", "Low Strain"), 
-         fill = c("#FF4500", "#E0E0E0"), bty = "n", title = "Strain Impact")
+  # --- 3. CALCULATION OF SYSTEM RESILIENCE ---
+  # Quantifying the ratio of structural strain to observed variance
+  v_obs <- apply(L, 2, var)
+  resilience_score <- 1 - (sum(strain_potential) / (sum(v_obs) + sum(strain_potential)))
 
-  dev.off()
+  # --- 4. ORDINAL RANKING (RANK) ---
+  # Ranking components by Strain Potential (Inconsistency Magnitude)
+  # Rank 1 = Highest Strain Potential (Primary System Constraint)
+  strain_rank <- rank(-strain_potential)
 
-  # --- 6. CONSOLE OUTPUT ---
-  fact_sheet <- data.frame(Component = valid_taxa, Strain_Impact = strain_potential)
-  cat("\n--- OBJECTIVE SYSTEM REPORT ---\n")
-  cat(sprintf("Resilience Score: %.4f\n", resilience_score))
-  print(fact_sheet)
+  # --- 5. DATA AGGREGATION (FACT SHEET) ---
+  fact_sheet <- data.frame(
+    Component = valid_taxa,
+    Strain_Potential = as.numeric(strain_potential),
+    Strain_Rank = as.integer(strain_rank),
+    Observed_Log_Var = as.numeric(v_obs)
+  )
   
-  return(list(Resilience = resilience_score, Facts = fact_sheet))
+  # Sort fact sheet by rank for reporting
+  fact_sheet <- fact_sheet[order(fact_sheet$Strain_Rank), ]
+
+  # --- 6. FORMAL NUMERICAL REPORT ---
+  cat("\n==========================================================\n")
+  cat("          ITAGAKI SYSTEM: COMPLETE FACT REPORT            \n")
+  cat("==========================================================\n")
+  cat(sprintf("System Resilience Score  : %.6f\n", resilience_score))
+  cat(sprintf("Analyzed URT Dimensions  : %d\n", length(valid_taxa)))
+  cat(sprintf("Inconsistency Ratio      : %.6f\n", 1 - resilience_score))
+  cat("----------------------------------------------------------\n")
+  cat(" RANK | STRAIN POT. | LOG VAR.  | Universally Reliable Taxa \n")
+  cat("----------------------------------------------------------\n")
+  
+  for(i in 1:nrow(fact_sheet)) {
+    cat(sprintf(" %4d | %11.6f | %9.6f | %-19s\n", 
+                fact_sheet$Strain_Rank[i],  
+                fact_sheet$Strain_Potential[i], 
+                fact_sheet$Observed_Log_Var[i],
+                fact_sheet$Component[i]))
+  }
+  cat("==========================================================\n")
+  cat("NOTE: Rank 1 indicates the component with the highest \n")
+  cat("structural inconsistency (Strain Impact) in the system.\n")
+  cat("==========================================================\n")
+  
+  return(list(
+    Resilience = resilience_score,
+    Fact_Sheet = fact_sheet,
+    P_urt = P_urt
+  ))
 }
 
-# --- EXECUTION ---
-  result <- export_itagaki_base_map(Dataset, threshold = 0.35)
+# --- EXECUTION COMMAND ---
+  result <- extract_itagaki_complete_facts(Dataset)
