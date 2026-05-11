@@ -91,4 +91,8 @@ extract_itagaki_complete_facts <- function(Dataset) {
 }
 
 # --- EXECUTION COMMAND ---
+# resilience_score > 0.7: "HIGH (Stable)", 
+# resilience_score > 0.4: "MODERATE"
+# resilience_score <= 0.4: "LOW (Chaos)"
+
   result <- extract_itagaki_complete_facts(Dataset)
