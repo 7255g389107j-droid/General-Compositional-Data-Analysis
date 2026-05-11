@@ -3,6 +3,11 @@
 # -----------------------------------------------------------------
 # Feature: Absolute Flux Reconstruction via Residual Strain Decoding
 # Logic: Decoding Total Volume Flux (Vt) and Re-injecting into CLR Space
+# WARNING:
+# This system does NOT restore physical units (mg/L, counts, etc.).
+# It only identifies the "Direction of Interaction" by stripping
+# the mathematical distortion inherent in compositional data.
+# The 'True' in R_true refers to the topological structure, not the scale.
 # Developed by: Tatsuki Itagaki
 # Saturday, May 9, 2026
 # Copyright (c) 2026 Tatsuki Itagaki
@@ -59,7 +64,7 @@ itagaki_general_solution <- function(Dataset) {
   # Absolute Bias (The System's Heartbeat)
   # Reconstructing the missing dimension of height (Total Flux).
   system_pulse <- scale(rowMeans(L)) * estimated_Vt
-  absolute_log_truth <- sweep(clr_matrix, 1, system_pulse, "+")
+  reconstruct_true_log_truth <- sweep(clr_matrix, 1, system_pulse, "+")
   
   # 4. FINAL SYSTEM REPORT
   cat("\n==========================================================\n")
@@ -71,7 +76,7 @@ itagaki_general_solution <- function(Dataset) {
   cat("==========================================================\n")
   
   return(list(
-    Absolute_Truth = absolute_log_truth,
+    Reconstruct_True = reconstruct_true_log_truth,
     Compositional_CLR = clr_matrix,
     URT_Data = P_urt,
     Vt = estimated_Vt
@@ -89,6 +94,6 @@ print(sort(pass_counts, decreasing = TRUE))
   result <- itagaki_general_solution(Dataset)
 
 # --- VISUALIZATION OF REWRITTEN REALITY ---
-# Compare CLR (Mathematical) vs Absolute (Physical)
-# head(result$Absolute_Truth)
-  result$Absolute_Truth
+# Compare CLR (Mathematical) vs Reconstruct (Physical)
+# head(result$Reconstruct_True)
+  result$Reconstruct_True
