@@ -1,8 +1,11 @@
 # =================================================================
 # ITAGAKI-SYSTEM: PURE CAUSAL DYNAMICS (NO-Vt EDITION)
+# ITAGAKI-SYSTEM: PURE FACTUAL TOPOLOGY PLOT (Label-Collision Fix)
 # -----------------------------------------------------------------
 # Feature: 100% Fact-Based Topology (No estimation of Absolute Scale)
 # Logic: Strain Potential (Structural Fact) + CV Asymmetry (Ohta's Fact)
+# -----------------------------------------------------------------
+# Feature: Overlap avoidance via radial displacement
 # Developed by: Tatsuki Itagaki
 # Monday, May 11, 2026
 # Copyright (c) 2026 Tatsuki Itagaki
@@ -93,14 +96,6 @@ analyze_pure_causality <- function(Dataset) {
 # Execute
 result <- analyze_pure_causality(Dataset)
 
-# =================================================================
-# ITAGAKI-SYSTEM: PURE FACTUAL TOPOLOGY PLOT (Label-Collision Fix)
-# -----------------------------------------------------------------
-# Feature: Overlap avoidance via radial displacement
-# Developed by: Tatsuki Itagaki
-# Monday, May 11, 2026
-# =================================================================
-
 plot_pure_causality_clean <- function(pure_result) {
   report <- pure_result$Report
   asym_mat <- pure_result$Matrix
@@ -173,3 +168,5 @@ plot_pure_causality_clean <- function(pure_result) {
 }
 
 plot_pure_causality_clean(result)
+
+result <- analyze_pure_causality(Dataset)
