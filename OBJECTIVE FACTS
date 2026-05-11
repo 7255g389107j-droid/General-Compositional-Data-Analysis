@@ -92,3 +92,84 @@ analyze_pure_causality <- function(Dataset) {
 
 # Execute
 result <- analyze_pure_causality(Dataset)
+
+# =================================================================
+# ITAGAKI-SYSTEM: PURE FACTUAL TOPOLOGY PLOT (Label-Collision Fix)
+# -----------------------------------------------------------------
+# Feature: Overlap avoidance via radial displacement
+# Developed by: Tatsuki Itagaki
+# Monday, May 11, 2026
+# =================================================================
+
+plot_pure_causality_clean <- function(pure_result) {
+  report <- pure_result$Report
+  asym_mat <- pure_result$Matrix
+  resilience <- pure_result$Resilience
+  
+  pdf("ITAGAKI_PURE_FACTUAL_TOPOLOGY_CLEAN.pdf", width = 14, height = 11)
+  par(mar = c(7, 7, 7, 5), bg = "#F9F9F9")
+  
+  x <- report$Strain_Impact
+  y <- report$Out_Degree
+  labels <- report$Component
+  n <- length(labels)
+  
+  # --- 1. BASE PLOT ---
+  plot(x, y, pch = 21, bg = "#3498DB", cex = 2.5, lwd = 1.5,
+       xlab = "STRUCTURAL STRAIN (Physical Fact)", 
+       ylab = "CAUSAL OUT-DEGREE (Control Fact)",
+       main = "ITAGAKI-SYSTEM: PURE FACTUAL TOPOLOGY (DE-OVERLAP)",
+       sub = paste("System Resilience Score:", round(resilience, 4)),
+       xlim = c(min(x)*0.85, max(x)*1.15),
+       ylim = c(-1, max(y) + 2),
+       cex.lab = 1.2, font.lab = 2, las = 1, bty = "l")
+  
+  # --- 2. FACTUAL ARROWS (Subtle) ---
+  for(i in 1:n) {
+    for(j in 1:n) {
+      if(asym_mat[report$Component[i], report$Component[j]] == 1) {
+        arrows(x[i], y[i], x[j], y[j], 
+               col = rgb(0.1, 0.1, 0.1, 0.08), length = 0.08, lwd = 0.8)
+      }
+    }
+  }
+
+  # --- 3. DYNAMIC LABEL DISPLACEMENT (Physics-based logic) ---
+  
+  adj_x <- x
+  adj_y <- y
+  
+ 
+  offset_base_x <- (max(x) - min(x)) * 0.03
+  offset_base_y <- (max(y) - min(y)) * 0.04
+  
+  for(i in 1:n) {
+    
+    dist_to_others <- sqrt(((x[i] - x)^2) + ((y[i] - y)^2))
+    close_points <- sum(dist_to_others < (max(dist_to_others)*0.05))
+    
+    angle <- (i / n) * 2 * pi
+    final_x <- x[i] + cos(angle) * offset_base_x * (close_points^0.5)
+    final_y <- y[i] + sin(angle) * offset_base_y * (close_points^0.5)
+    
+   
+    segments(x[i], y[i], final_x, final_y, col = "grey70", lwd = 0.5)
+    text(final_x, final_y, labels = labels[i], 
+         cex = 0.75, font = 2, col = "#2C3E50")
+  }
+  
+  # --- 4. GRID & METRICS ---
+  abline(h = mean(y), col = "#E74C3C", lty = 3, lwd = 1.5)
+  abline(v = mean(x), col = "#E74C3C", lty = 3, lwd = 1.5)
+  
+  legend("topleft", legend = c("Average Influence/Strain", "Physical Component"),
+         lty = c(3, NA), pch = c(NA, 21), pt.bg = c(NA, "#3498DB"), 
+         col = c("#E74C3C", "black"), bty = "n", cex = 0.9)
+  mtext("UPPER RIGHT: Potential Master Regulators (High Strain & High Control)", 
+        side = 3, line = 0.5, cex = 0.9, col = "#E74C3C", font = 2)
+
+  dev.off()
+  cat("\n[SUCCESS] Clean Topology PDF generated (Overlap Adjusted).\n")
+}
+
+plot_pure_causality_clean(result)
