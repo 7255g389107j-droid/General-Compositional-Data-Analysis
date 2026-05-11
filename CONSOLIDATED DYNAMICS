@@ -26,6 +26,11 @@ sample_ids <- rownames(P_raw)
 if(is.null(sample_ids)) sample_ids <- paste0("S_", 1:nrow(P_raw))
 n_s <- nrow(P_raw); n_t <- ncol(P_raw)
 
+ # Mathematical stability requires at least 4 samples to define a physical structure.
+  if(n_s < 4) {
+    stop("CRITICAL ERROR: Insufficient samples (< 4). Physical structure cannot be defined.")
+  }
+
 # CRITICAL: Execute Reliability Check before URT extraction
 rel_status_mat <- matrix(-1, nrow=n_s, ncol=n_t, dimnames=list(sample_ids, colnames(P_raw)))
 
