@@ -79,7 +79,8 @@ evaluate_itagaki_full_paradigm <- function(Dataset, threshold = 0.35) {
   par(mar = c(3, 3, 5, 3))
   plot(NULL, xlim=c(-1.8, 1.8), ylim=c(-1.8, 1.8), asp=1, axes=F, ann=F)
   title(main="ITAGAKI-SYSTEM: CAUSAL DETERMINISM NETWORK", cex.main=1.5)
-  mtext(sprintf("Resilience Score: %.4f | Decoded Vt: %.4f", resilience_score, est_Vt), 3, line=0.5)
+  mtext(sprintf("Resilience Score: %.4f | Decoded Vt: %.4f", resilience_score, est_Vt), 3, line=1.0)
+  mtext("Interpretation: Blue = Positive Sync | Red = Antagonism", 3, line = 0.2, cex = 0.9, font = 2)
 
   # Draw Arrows
   for(i in 1:n_t) {
