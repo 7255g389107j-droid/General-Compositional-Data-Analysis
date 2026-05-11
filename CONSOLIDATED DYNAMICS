@@ -1,5 +1,9 @@
 # =================================================================
 # ITAGAKI-SYSTEM V2026: FINAL CONSOLIDATED DYNAMICS ENGINE (REFIX)
+# WARNING: 
+# This system does NOT restore physical units (mg/L, counts, etc.). 
+# It only estimate the trends.
+# The trend may not be true.
 # -----------------------------------------------------------------
 # Developed by: Tatsuki Itagaki
 # Saturday, May 9, 2026
