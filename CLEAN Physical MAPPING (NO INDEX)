@@ -3,6 +3,10 @@
 # -----------------------------------------------------------------
 # Feature: Removal of mathematical indices (1, 2, 3...)
 # Fix: Pure label-based axes for URT and Dynamics
+# WARNING: 
+# This system does NOT restore physical units (mg/L, counts, etc.). 
+# It only estimate the trends.
+# The trend may not be true.
 # Developed by: Tatsuki Itagaki
 # Saturday, May 9, 2026
 # Copyright (c) 2026 Tatsuki Itagaki
